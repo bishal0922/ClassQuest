@@ -17,7 +17,7 @@ For instructions on how to contribute, please refer to the [contributing.md](./d
 
 
 ** IMP ***
-Utilize node version *18.17.0* (use `nvm` package manager to manage node versions)
+use node version *18.17.0* or higher (use `nvm` package manager to manage node versions)
 
 --- 
 
