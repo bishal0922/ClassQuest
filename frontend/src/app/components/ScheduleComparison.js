@@ -22,7 +22,7 @@ const ScheduleComparison = () => {
 
   const handleCompare = () => {
     // Mock comparison result
-    setComparisonResult("Users' schedules compared. Free times: Monday 2-4pm, Wednesday 1-3pm");
+    setComparisonResult("Users' schedules compared. Free times: Monday 2-4pm, Wednesday 1-3pm. Refer to calendar for more details.");
   };
 
   return (
@@ -52,7 +52,7 @@ const ScheduleComparison = () => {
       </button>
       {comparisonResult && (
         <div className="mt-4 p-4 bg-white rounded-md shadow">
-          <h3 className="text-lg font-semibold mb-2">Comparison Result</h3>
+          <h3 className="text-lg font-semibold mb-2">Mock Comparison Result</h3>
           <p>{comparisonResult}</p>
         </div>
       )}
