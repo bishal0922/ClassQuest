@@ -8,7 +8,7 @@ const ScheduleComparison = () => {
 
   const mockUsers = [
     { id: '1', name: 'Cole Palmer' },
-    { id: '2', name: 'Nickolas Jackson' },
+    { id: '2', name: 'Nicolas Jackson' },
     { id: '3', name: 'Jadon Sancho' },
   ];
 
