@@ -38,7 +38,7 @@ const Layout = ({ children }) => {
             {/* Sidebar */}
             <aside className={`fixed inset-y-0 left-0 z-20 w-64 bg-indigo-700 text-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
                 <div className="flex items-center justify-between p-4 border-b border-indigo-600">
-                    <h2 className="text-2xl font-bold">ScheduleSync</h2>
+                    <h2 className="text-2xl font-bold">ClassQuest</h2>
                     <button onClick={() => setSidebarOpen(false)} className="md:hidden">
                         <X size={24} />
                     </button>

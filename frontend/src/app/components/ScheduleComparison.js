@@ -7,9 +7,9 @@ const ScheduleComparison = () => {
   const [comparisonResult, setComparisonResult] = useState(null);
 
   const mockUsers = [
-    { id: '1', name: 'Alice Johnson' },
-    { id: '2', name: 'Bob Smith' },
-    { id: '3', name: 'Charlie Brown' },
+    { id: '1', name: 'Cole Palmer' },
+    { id: '2', name: 'Nickolas Jackson' },
+    { id: '3', name: 'Jadon Sancho' },
   ];
 
   const handleUserSelect = (userId) => {
