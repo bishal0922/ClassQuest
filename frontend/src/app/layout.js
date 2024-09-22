@@ -1,6 +1,6 @@
 import localFont from "next/font/local";
 import Layout from "./components/Layout";
-import "./globals.css";
+import './styles/globals.css';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
