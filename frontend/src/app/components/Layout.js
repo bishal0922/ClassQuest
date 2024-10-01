@@ -76,22 +76,12 @@ const Layout = ({ children }) => {
                     ))}
                 </nav>
                 <div className="absolute bottom-0 w-full p-4">
-                    {user ? (
+                    {user && (
                         <button onClick={handleSignOut} className="flex items-center justify-center w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-md transition-colors duration-200">
                             <LogOut className="mr-2 h-5 w-5" />
                             Logout
                         </button>
-                    ) : pathname === '/login' ? (
-                        <Link href="/signup" className="flex items-center justify-center w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-md transition-colors duration-200">
-                            <UserPlus2 className="mr-2 h-5 w-5" />
-                            Create Account
-                        </Link>
-                    ) : (
-                        <Link href="/login" className="flex items-center justify-center w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-md transition-colors duration-200">
-                            <LogIn className="mr-2 h-5 w-5" />
-                            Login
-                        </Link>
-                    )}
+                    ) }
                 </div>
             </aside>
 
