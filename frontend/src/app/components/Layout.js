@@ -1,23 +1,38 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu, X, Home, Calendar, Search, BarChart2, LogOut } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Menu, X, Home, Calendar, Search, BarChart2, LogOut, UserPlus2, LogIn } from 'lucide-react';
+import { onAuthStateChanged, signOut } from '../lib/firebase/auth';
 
 const Layout = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [user, setUser] = useState(null);
     const pathname = usePathname();
+    const router = useRouter();
 
-    const navItems = [
-        { href: '/', label: 'Home', icon: Home },
-        { href: '/schedule', label: 'My Schedule', icon: Calendar },
-        { href: '/search', label: 'Search Users', icon: Search },
-        { href: '/compare', label: 'Compare', icon: BarChart2 },
-    ];
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged((authUser) => {
+            setUser(authUser);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    const navItems = user
+        ? [
+            { href: '/', label: 'Home', icon: Home },
+            { href: '/schedule', label: 'My Schedule', icon: Calendar },
+            { href: '/search', label: 'Search Users', icon: Search },
+            { href: '/compare', label: 'Compare', icon: BarChart2 },
+          ]
+        : [
+            { href: '/', label: 'Home', icon: Home },
+          ];
 
     const getPageTitle = () => {
         const currentItem = navItems.find((item) => item.href === pathname);
-        return currentItem ? currentItem.label : 'ScheduleSync';
+        return currentItem ? currentItem.label : 'ClassQuest';
     };
 
     useEffect(() => {
@@ -32,6 +47,11 @@ const Layout = ({ children }) => {
 
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    const handleSignOut = async () => {
+        await signOut();
+        router.push('/');
+    };
 
     return (
         <div className="flex h-screen bg-gray-100">
@@ -56,10 +76,22 @@ const Layout = ({ children }) => {
                     ))}
                 </nav>
                 <div className="absolute bottom-0 w-full p-4">
-                    <button className="flex items-center justify-center w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-md transition-colors duration-200">
-                        <LogOut className="mr-2 h-5 w-5" />
-                        Logout
-                    </button>
+                    {user ? (
+                        <button onClick={handleSignOut} className="flex items-center justify-center w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-md transition-colors duration-200">
+                            <LogOut className="mr-2 h-5 w-5" />
+                            Logout
+                        </button>
+                    ) : pathname === '/login' ? (
+                        <Link href="/signup" className="flex items-center justify-center w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-md transition-colors duration-200">
+                            <UserPlus2 className="mr-2 h-5 w-5" />
+                            Create Account
+                        </Link>
+                    ) : (
+                        <Link href="/login" className="flex items-center justify-center w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-md transition-colors duration-200">
+                            <LogIn className="mr-2 h-5 w-5" />
+                            Login
+                        </Link>
+                    )}
                 </div>
             </aside>
 
