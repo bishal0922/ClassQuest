@@ -1,3 +1,13 @@
+/**
+ * This is the ScheduleComparison component.
+ * It allows users to select multiple users and compare their schedules.
+ * The component uses React's useState hook to manage the state of selected users and the comparison result.
+ * The mockUsers array is a placeholder for user data. In a real application, this data would likely come from an API or database.
+ * The handleUserSelect function is used to add or remove users from the selectedUsers state when a user clicks on a button.
+ * The handleCompare function is a placeholder for the actual comparison logic. It sets a mock comparison result for now.
+ * The component renders a list of user buttons and a "Compare Schedules" button. The "Compare Schedules" button is disabled until at least two users are selected.
+ * When the "Compare Schedules" button is clicked, the handleCompare function is called, and the comparison result is displayed.
+ */
 "use client"
 
 import React, { useState } from 'react';

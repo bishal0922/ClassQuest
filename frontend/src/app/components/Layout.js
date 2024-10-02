@@ -1,3 +1,17 @@
+/**
+ * This is the Layout component for our application.
+ * 
+ * It serves as the main wrapper for all the pages and includes the sidebar navigation.
+ * The sidebar contains links to different parts of the app like Home, My Schedule, Search Users, and Compare.
+ * 
+ * The component also handles user authentication state and adjusts the navigation items accordingly.
+ * If a user is logged in, they will see more navigation options.
+ * 
+ * Additionally, the sidebar's visibility is responsive to the window size.
+ * On larger screens, the sidebar is always visible, while on smaller screens, it can be toggled.
+ * 
+ * The "use client" directive at the top indicates that this component should be rendered on the client side.
+ */
 "use client"
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';

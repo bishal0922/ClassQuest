@@ -1,3 +1,25 @@
+/**
+ * This is the ScheduleForm component.
+ * 
+ * This component allows users to create and manage their class schedules.
+ * Users can add new classes, update existing ones, and view their schedule for each day of the week.
+ * 
+ * The component uses React's useState hook to manage the state of the schedule, the active day, 
+ * the modal for adding or editing classes, and the details of the new or edited class.
+ * 
+ * The daysOfWeek array contains the days from Monday to Friday.
+ * The hours array contains the hours from 01 to 12, and the minutes array contains the minutes in 15-minute intervals.
+ * The buildings array lists the available buildings where classes can be held.
+ * 
+ * The addOrUpdateClass function is used to add a new class to the schedule or update an existing class.
+ * It checks if an identical class already exists to avoid duplicates.
+ * 
+ * The component renders a form where users can input the class name, location, start time, and end time.
+ * It also displays the schedule for each day and allows users to edit or delete classes.
+ * 
+ * The "use client" directive at the top indicates that this component should be rendered on the client side.
+ */
+
 "use client"
 
 import React, { useState } from 'react';
