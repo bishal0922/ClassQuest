@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, Home, Calendar, Search, BarChart2, LogOut } from 'lucide-react';
@@ -10,6 +10,7 @@ const Layout = ({ children }) => {
     const [user, setUser] = useState(null);
     const pathname = usePathname();
     const router = useRouter();
+    const sidebarRef = useRef(null);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged((authUser) => {
@@ -34,6 +35,8 @@ const Layout = ({ children }) => {
         const handleResize = () => {
             if (window.innerWidth >= 768) {
                 setSidebarOpen(true);
+            } else {
+                setSidebarOpen(false);
             }
         };
     
@@ -47,12 +50,24 @@ const Layout = ({ children }) => {
         await signOut();
         router.push('/');
     };
-    
+
+    const handleClickOutside = (event) => {
+        if (sidebarRef.current && !sidebarRef.current.contains(event.target) && window.innerWidth < 768) {
+            setSidebarOpen(false);
+        }
+    };
+
+    useEffect(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     return (
         <div className="flex h-screen overflow-hidden bg-indigo-50">
             {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 z-20 w-72 bg-indigo-600 text-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
+            <aside ref={sidebarRef} className={`fixed inset-y-0 left-0 z-30 w-72 bg-indigo-600 text-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
                 <div className="flex items-center justify-between p-6 border-b border-indigo-500">
                     <h2 className="text-2xl font-bold">ClassQuest</h2>
                     <button onClick={() => setSidebarOpen(false)} className="md:hidden">
@@ -80,6 +95,14 @@ const Layout = ({ children }) => {
                     )}
                 </div>
             </aside>
+
+            {/* Overlay */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden" 
+                    onClick={() => setSidebarOpen(false)}
+                ></div>
+            )}
 
             {/* Main content area */}
             <div className="flex-1 md:ml-72">
@@ -109,4 +132,3 @@ const Layout = ({ children }) => {
 };
 
 export default Layout;
-
