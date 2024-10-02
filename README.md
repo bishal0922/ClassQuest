@@ -4,10 +4,29 @@ C.L.A.S.S (Campus Location and Schedule Sync)
 ### Deployment Links
 
 - [Development Environment](https://classquest-dev.vercel.app/)
-- [Production Environment](https://classquest-prod.vercel.app/)
+- [Production Environment](https://classquest-prod.vercel.app/) 
 
-### Description
-TODO: add description
+## Also Read
+
+- [Instructions](https://doc.clickup.com/9011239105/d/8cht661-651/readme)
+
+## Project Structure
+
+Our ClassQuest project adheres to a standard Next.js structure with some customizations. Below is an overview of the main directories and their purposes:
+
+**Frontend**
+
+* `src/`: Source code for the application.
+	+ `app/`: Main application directory using Next.js 13+ App Router.
+		- `api/`: API routes for server-side functionality.
+		- `components/`: Reusable React components.
+		- `lib/`: Utility functions, custom hooks, and configuration files.
+		- `styles/`: Global styles and CSS modules.
+		- `[various page directories]/`: Each represents a route in the application.
+	+ `public/`: Static files served by Next.js.
+	+ `next.config.mjs`: Next.js configuration file.
+	+ `package.json`: Project dependencies and scripts.
+	+ `tailwind.config.js`: Tailwind CSS configuration.
 
 ### Contributing
 
