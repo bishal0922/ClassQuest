@@ -1,11 +1,21 @@
+// Importing the localFont function from next/font/local to use custom fonts in our app
 import localFont from "next/font/local";
-import "./globals.css";
+
+// Importing the Layout component which will be used to wrap our main content
+import Layout from "./components/Layout";
+
+// Importing global CSS styles to apply them across the entire app
+import './styles/globals.css';
+
+// Importing the AuthProvider component to handle authentication throughout the app
+import { AuthProvider } from './components/AuthProvider';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
 });
+
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
@@ -20,10 +30,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <AuthProvider>
+          <Layout>{children}</Layout>
+        </AuthProvider>
       </body>
     </html>
   );
