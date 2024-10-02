@@ -1,3 +1,18 @@
+/**
+ * This file is responsible for rendering the login page for our application.
+ * 
+ * The login page includes a form where users can enter their email and password to log in.
+ * 
+ * The useRouter hook from Next.js is used to navigate the user to the home page upon successful login.
+ * 
+ * The handleChange function updates the form data state whenever the user types into the input fields.
+ * The handleSubmit function handles the form submission, attempts to sign in the user using the signIn function,
+ * and redirects them to the home page if successful. If there's an error during sign-in, it sets the error state
+ * to display an error message.
+ * 
+ * The component returns a JSX structure that includes the form and any error messages.
+ * The form has input fields for the email and password, and a submit button to log in.
+ */
 "use client";
 
 import React, { useState } from 'react';

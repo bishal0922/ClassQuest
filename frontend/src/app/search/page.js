@@ -1,3 +1,11 @@
+/**
+ * This file is responsible for rendering the search page in our application.
+ * 
+ * The search page will allow users to search for other users in the system.
+ * 
+ * Currently, the page includes a heading and a placeholder text indicating that the search functionality
+ * will be developed after the authentication integration is complete.
+ */
 import React from 'react';
 
 const SearchPage = () => {

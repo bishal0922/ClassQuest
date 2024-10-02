@@ -1,6 +1,13 @@
+// Importing the localFont function from next/font/local to use custom fonts in our app
 import localFont from "next/font/local";
+
+// Importing the Layout component which will be used to wrap our main content
 import Layout from "./components/Layout";
+
+// Importing global CSS styles to apply them across the entire app
 import './styles/globals.css';
+
+// Importing the AuthProvider component to handle authentication throughout the app
 import { AuthProvider } from './components/AuthProvider';
 
 const geistSans = localFont({

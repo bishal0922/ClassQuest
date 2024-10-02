@@ -1,3 +1,16 @@
+/**
+ * The useRouter hook from Next.js is used to navigate the user to the login page upon successful signup.
+ * 
+ * The useEffect hook is used to log the auth object to the console when the component mounts.
+ * 
+ * The handleChange function updates the form data state whenever the user types into the input fields.
+ * The handleSubmit function handles the form submission, attempts to sign up the user using the signUp function,
+ * updates the user's profile with their username, and redirects them to the login page if successful.
+ * If there's an error during sign-up, it sets the error state to display an error message.
+ * 
+ * The component returns a JSX structure that includes the form and any error messages.
+ * The form has input fields for the username, email, and password, and a submit button to sign up.
+ */
 "use client";
 
 import React, { useState, useEffect } from 'react';

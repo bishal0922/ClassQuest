@@ -1,3 +1,16 @@
+/**
+ * This file is responsible for rendering the home page of our application.
+ * 
+ * The home page displays a welcome message, the current time, and weather information.
+ * 
+ * The useAuthContext hook is used to get the current user's authentication status.
+ * 
+ * The useEffect hook is used to set up a timer to update the current time every minute
+ * and to fetch the current weather information when the component mounts.
+ * 
+ * The component returns a JSX structure that includes a loading spinner if the authentication
+ * status is still being determined, and the main content of the home page otherwise.
+ */
 "use client"
 import React, { useEffect, useState } from 'react';
 import { useAuthContext } from './components/AuthProvider';
