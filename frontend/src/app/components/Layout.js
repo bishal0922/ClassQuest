@@ -16,7 +16,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, Home, Calendar, Search, BarChart2, LogOut } from 'lucide-react';
+import { Menu, X, Home, Calendar, Search, BarChart2, LogOut,Compass } from 'lucide-react';
 import { onAuthStateChanged, signOut } from '../lib/firebase/auth';
 
 const Layout = ({ children }) => {
@@ -40,6 +40,7 @@ const Layout = ({ children }) => {
             { href: '/schedule', label: 'My Schedule', icon: Calendar },
             { href: '/search', label: 'Search Users', icon: Search },
             { href: '/compare', label: 'Compare', icon: BarChart2 },
+            { href: '/directions', label: 'Directions', icon: Compass },
           ]
         : [
             { href: '/', label: 'Home', icon: Home },
