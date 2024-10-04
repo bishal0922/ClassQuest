@@ -4,9 +4,30 @@
  * You can also copy, share, and save the directions as an image.
  */
 "use client"
-import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Copy, Share2 } from 'lucide-react';
+
+const MapContainer = dynamic(
+  () => import('react-leaflet').then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import('react-leaflet').then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+const Marker = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Marker),
+  { ssr: false }
+);
+const Popup = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Popup),
+  { ssr: false }
+);
+const Polyline = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Polyline),
+  { ssr: false }
+);
 
 const campusLocations = {
   'University Center': { lat: 32.73166141145963, lng: -97.11092778726972 },
@@ -18,17 +39,15 @@ const campusLocations = {
 };
 
 const Directions = () => {
-  const [isClient, setIsClient] = useState(false);
   const [startPoint, setStartPoint] = useState(null);
   const [endPoint, setEndPoint] = useState(null);
   const [directions, setDirections] = useState([]);
   const [route, setRoute] = useState([]);
   const [error, setError] = useState(null);
-  const mapRef = useRef(null);
-  const directionsRef = useRef(null);
+  const [isMapReady, setIsMapReady] = useState(false);
 
   useEffect(() => {
-    setIsClient(true); // Ensures this component is rendering on the client
+    setIsMapReady(true);
   }, []);
 
   useEffect(() => {
@@ -73,16 +92,14 @@ const Directions = () => {
   };
 
   const copyDirections = () => {
-    if (isClient) {
-      const directionsText = directions.join('\n');
-      navigator.clipboard.writeText(directionsText)
-        .then(() => alert('Directions copied to clipboard!'))
-        .catch(err => console.error('Failed to copy directions: ', err));
-    }
+    const directionsText = directions.join('\n');
+    navigator.clipboard.writeText(directionsText)
+      .then(() => alert('Directions copied to clipboard!'))
+      .catch(err => console.error('Failed to copy directions: ', err));
   };
 
   const shareDirections = () => {
-    if (isClient && navigator.share) {
+    if (navigator.share) {
       const shareText = `Directions from ${startPoint.name} to ${endPoint.name} at UTA Campus:\n\n${directions.join('\n')}`;
       
       navigator.share({
@@ -92,15 +109,9 @@ const Directions = () => {
         .catch((error) => console.log('Error sharing:', error));
     } else {
       alert('Sharing is not supported on this device. You can copy the directions instead.');
-      navigator.clipboard.writeText(shareText)
-        .then(() => alert('Directions copied to clipboard!'))
-        .catch(err => console.error('Failed to copy directions: ', err));
+      copyDirections();
     }
   };
-
-  if (!isClient) {
-    return null; // Ensures this component renders only on the client side
-  }
 
   if (error) {
     return <div className="text-red-500 font-bold">{error}</div>;
@@ -136,34 +147,36 @@ const Directions = () => {
         </div>
       </div>
       
-      <div ref={mapRef} className="h-[500px] mb-4">
-        <MapContainer 
-          center={[32.7299, -97.1135]} 
-          zoom={16} 
-          style={{ height: '100%', width: '100%' }}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-          {startPoint && (
-            <Marker position={[startPoint.lat, startPoint.lng]}>
-              <Popup>Start: {startPoint.name}</Popup>
-            </Marker>
-          )}
-          {endPoint && (
-            <Marker position={[endPoint.lat, endPoint.lng]}>
-              <Popup>End: {endPoint.name}</Popup>
-            </Marker>
-          )}
-          {route.length > 0 && (
-            <Polyline positions={route} color="blue" />
-          )}
-        </MapContainer>
-      </div>
+      {isMapReady && (
+        <div className="h-[500px] mb-4">
+          <MapContainer 
+            center={[32.7299, -97.1135]} 
+            zoom={16} 
+            style={{ height: '100%', width: '100%' }}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            {startPoint && (
+              <Marker position={[startPoint.lat, startPoint.lng]}>
+                <Popup>Start: {startPoint.name}</Popup>
+              </Marker>
+            )}
+            {endPoint && (
+              <Marker position={[endPoint.lat, endPoint.lng]}>
+                <Popup>End: {endPoint.name}</Popup>
+              </Marker>
+            )}
+            {route.length > 0 && (
+              <Polyline positions={route} color="blue" />
+            )}
+          </MapContainer>
+        </div>
+      )}
       
       {directions.length > 0 && (
-        <div ref={directionsRef} className="bg-white p-4 rounded-lg shadow-md mt-4">
+        <div className="bg-white p-4 rounded-lg shadow-md mt-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Directions:</h2>
             <div className="space-x-2">
