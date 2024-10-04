@@ -15,10 +15,10 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthContext } from './components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { Sun, Wind, Droplets, Calendar, LogIn, UserPlus, MapPin } from 'lucide-react';
+import { Sun, Wind, Droplets, Calendar, LogIn, UserPlus, MapPin, User } from 'lucide-react';
 
 const Home = () => {
-  const { user, loading } = useAuthContext();
+  const { user, loading, setGuestMode } = useAuthContext();
   const router = useRouter();
   const [currentTime, setCurrentTime] = useState('');
   const [weather, setWeather] = useState(null);
@@ -52,6 +52,11 @@ const Home = () => {
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
     </div>;
   }
+
+  const handleGuestMode = () => {
+    setGuestMode(true);
+    router.push('/schedule');
+  };
 
   return (
     <div className="h-full flex items-center justify-center p-4">
@@ -121,6 +126,13 @@ const Home = () => {
               >
                 <UserPlus className="mr-2" size={20} />
                 Sign up
+              </button>
+              <button 
+                onClick={handleGuestMode}
+                className="w-full flex items-center justify-center px-4 py-2 md:py-3 border border-gray-300 text-sm md:text-base font-medium rounded-md text-gray-600 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+              >
+                <User className="mr-2" size={20} />
+                Continue as Guest
               </button>
             </div>
           )}
