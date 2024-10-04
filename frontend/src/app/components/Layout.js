@@ -16,7 +16,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, Home, Calendar, Search, BarChart2, LogOut } from 'lucide-react';
+import { Menu, X, Home, Calendar, Search, BarChart2, LogOut,Compass } from 'lucide-react';
 import { onAuthStateChanged, signOut } from '../lib/firebase/auth';
 
 const Layout = ({ children }) => {
@@ -40,6 +40,7 @@ const Layout = ({ children }) => {
             { href: '/schedule', label: 'My Schedule', icon: Calendar },
             { href: '/search', label: 'Search Users', icon: Search },
             { href: '/compare', label: 'Compare', icon: BarChart2 },
+            { href: '/directions', label: 'Directions', icon: Compass },
           ]
         : [
             { href: '/', label: 'Home', icon: Home },
@@ -81,7 +82,7 @@ const Layout = ({ children }) => {
     return (
         <div className="flex h-screen overflow-hidden bg-indigo-50">
             {/* Sidebar */}
-            <aside ref={sidebarRef} className={`fixed inset-y-0 left-0 z-30 w-72 bg-indigo-600 text-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
+            <aside ref={sidebarRef} className={`fixed inset-y-0 left-0 z-50 w-72 bg-indigo-600 text-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
                 <div className="flex items-center justify-between p-6 border-b border-indigo-500">
                     <h2 className="text-2xl font-bold">ClassQuest</h2>
                     <button onClick={() => setSidebarOpen(false)} className="md:hidden">
@@ -113,7 +114,7 @@ const Layout = ({ children }) => {
             {/* Overlay */}
             {sidebarOpen && (
                 <div 
-                    className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden" 
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" 
                     onClick={() => setSidebarOpen(false)}
                 ></div>
             )}
@@ -121,7 +122,7 @@ const Layout = ({ children }) => {
             {/* Main content area */}
             <div className="flex-1 md:ml-72">
                 {/* Mobile header */}
-                <header className="bg-white shadow-sm z-10 md:hidden">
+                <header className="bg-white shadow-sm z-30 md:hidden">
                     <div className="px-4 py-4 flex justify-between items-center">
                         <h1 className="text-2xl font-semibold text-gray-900">ClassQuest</h1>
                         <button

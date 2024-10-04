@@ -10,11 +10,16 @@
   },
   "dependencies": {
     "firebase": "^10.13.2",
+    "html2canvas": "^1.4.1",
+    "leaflet": "^1.9.4",
+    "leaflet-routing-machine": "^3.2.12",
     "lucide": "^0.441.0",
     "lucide-react": "^0.441.0",
     "next": "^14.2.12",
     "react": "^18.3.1",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-leaflet": "^4.2.1",
+    "react-leaflet-routing-machine": "^0.0.5"
   },
   "devDependencies": {
     "eslint": "^8",
