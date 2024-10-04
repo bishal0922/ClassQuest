@@ -1,14 +1,8 @@
-// Importing the localFont function from next/font/local to use custom fonts in our app
 import localFont from "next/font/local";
-
-// Importing the Layout component which will be used to wrap our main content
 import Layout from "./components/Layout";
-
-// Importing global CSS styles to apply them across the entire app
 import './styles/globals.css';
-
-// Importing the AuthProvider component to handle authentication throughout the app
 import { AuthProvider } from './components/AuthProvider';
+import Script from 'next/script';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -30,10 +24,28 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        />
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
           <Layout>{children}</Layout>
         </AuthProvider>
+        <Script 
+          src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+          strategy="afterInteractive"
+        />
+        <Script 
+          src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
