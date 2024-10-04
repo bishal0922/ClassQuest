@@ -4,28 +4,36 @@
  * It now includes guest mode functionality.
  */
 "use client";
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../lib/useAuth';
-import { signOut as firebaseSignOut } from '../lib/firebase/auth'; // Import the signOut function from your auth file
+import { signOut as firebaseSignOut } from '../lib/firebase/auth';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const auth = useAuth();
+  const { user, loading } = useAuth();
   const [isGuestMode, setIsGuestMode] = useState(false);
 
+  // Effect to reset guest mode when user logs in
+  useEffect(() => {
+    if (user) {
+      setIsGuestMode(false);
+    }
+  }, [user]);
+
   const authValue = {
-    ...auth,
+    user,
+    loading,
     isGuestMode,
     setGuestMode: (value) => {
       setIsGuestMode(value);
       // If entering guest mode, clear any existing auth
       if (value) {
-        firebaseSignOut(); // Use the imported signOut function
+        firebaseSignOut();
       }
     },
     signOut: async () => {
-      await firebaseSignOut(); // Use the imported signOut function
+      await firebaseSignOut();
       setIsGuestMode(false);
     }
   };
