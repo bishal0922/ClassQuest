@@ -6,8 +6,7 @@
 "use client"
 import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
-import { Copy, Share2, Image } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { Copy, Share2 } from 'lucide-react';
 
 const campusLocations = {
   'University Center': { lat: 32.73166141145963, lng: -97.11092778726972 },
@@ -19,6 +18,7 @@ const campusLocations = {
 };
 
 const Directions = () => {
+  const [isClient, setIsClient] = useState(false);
   const [startPoint, setStartPoint] = useState(null);
   const [endPoint, setEndPoint] = useState(null);
   const [directions, setDirections] = useState([]);
@@ -26,6 +26,10 @@ const Directions = () => {
   const [error, setError] = useState(null);
   const mapRef = useRef(null);
   const directionsRef = useRef(null);
+
+  useEffect(() => {
+    setIsClient(true); // Ensures this component is rendering on the client
+  }, []);
 
   useEffect(() => {
     if (startPoint && endPoint) {
@@ -69,16 +73,18 @@ const Directions = () => {
   };
 
   const copyDirections = () => {
-    const directionsText = directions.join('\n');
-    navigator.clipboard.writeText(directionsText)
-      .then(() => alert('Directions copied to clipboard!'))
-      .catch(err => console.error('Failed to copy directions: ', err));
+    if (isClient) {
+      const directionsText = directions.join('\n');
+      navigator.clipboard.writeText(directionsText)
+        .then(() => alert('Directions copied to clipboard!'))
+        .catch(err => console.error('Failed to copy directions: ', err));
+    }
   };
 
   const shareDirections = () => {
-    const shareText = `Directions from ${startPoint.name} to ${endPoint.name} at UTA Campus:\n\n${directions.join('\n')}`;
-    
-    if (navigator.share) {
+    if (isClient && navigator.share) {
+      const shareText = `Directions from ${startPoint.name} to ${endPoint.name} at UTA Campus:\n\n${directions.join('\n')}`;
+      
       navigator.share({
         title: 'UTA Campus Directions',
         text: shareText,
@@ -92,31 +98,9 @@ const Directions = () => {
     }
   };
 
-  const saveAsImage = async () => {
-    if (!mapRef.current || !directionsRef.current) return;
-
-    try {
-      const mapCanvas = await html2canvas(mapRef.current);
-      const directionsCanvas = await html2canvas(directionsRef.current);
-
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(mapCanvas.width, directionsCanvas.width);
-      canvas.height = mapCanvas.height + directionsCanvas.height;
-
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(mapCanvas, 0, 0);
-      ctx.drawImage(directionsCanvas, 0, mapCanvas.height);
-
-      const dataUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = 'UTA_Campus_Directions.png';
-      link.click();
-    } catch (error) {
-      console.error('Error saving image:', error);
-      alert('Failed to save image. Please try again.');
-    }
-  };
+  if (!isClient) {
+    return null; // Ensures this component renders only on the client side
+  }
 
   if (error) {
     return <div className="text-red-500 font-bold">{error}</div>;
@@ -194,12 +178,6 @@ const Directions = () => {
                 className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition-colors inline-flex items-center"
               >
                 <Share2 className="mr-2" size={18} /> Share
-              </button>
-              <button
-                onClick={saveAsImage}
-                className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors inline-flex items-center"
-              >
-                <Image className="mr-2" size={18} /> Save as Image
               </button>
             </div>
           </div>
