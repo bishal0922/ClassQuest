@@ -13,43 +13,36 @@
  * 
  * Each function connects to the database, performs the necessary operation, and returns the result.
  */
-import clientPromise from './mongodb';
+async function fetchFromAPI(action, data) {
+  const response = await fetch('/api/user', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action, data }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  return await response.json();
+}
 
 export async function createUser(userData) {
-  const client = await clientPromise;
-  const db = client.db("classquest");
-  const usersCollection = db.collection("users");
-
-  const result = await usersCollection.insertOne(userData);
-  return result;
+  return fetchFromAPI('createUser', userData);
 }
 
 export async function getUserByFirebaseId(firebaseId) {
-  const client = await clientPromise;
-  const db = client.db("classquest");
-  const usersCollection = db.collection("users");
-
-  const user = await usersCollection.findOne({ firebaseId });
-  return user;
+  const result = await fetchFromAPI('getUserByFirebaseId', { firebaseId });
+  return result.user;
 }
 
 export async function updateUserSchedule(firebaseId, schedule) {
-  const client = await clientPromise;
-  const db = client.db("classquest");
-  const usersCollection = db.collection("users");
-
-  const result = await usersCollection.updateOne(
-    { firebaseId },
-    { $set: { schedule } }
-  );
-  return result;
+  return fetchFromAPI('updateUserSchedule', { firebaseId, schedule });
 }
 
 export async function getUserSchedule(firebaseId) {
-  const client = await clientPromise;
-  const db = client.db("classquest");
-  const usersCollection = db.collection("users");
-
-  const user = await usersCollection.findOne({ firebaseId });
-  return user ? user.schedule : null;
+  const result = await fetchFromAPI('getUserSchedule', { firebaseId });
+  return result.schedule;
 }

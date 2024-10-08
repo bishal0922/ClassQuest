@@ -13,14 +13,42 @@
  */
 import { auth } from './firebase-config';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged as _onAuthStateChanged, signOut as _signOut } from 'firebase/auth';
+import { createUser, getUserByFirebaseId } from '../userModel';
 
 export function onAuthStateChanged(cb) {
-  return _onAuthStateChanged(auth, cb);
+  return _onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // Check if user exists in MongoDB
+      const dbUser = await getUserByFirebaseId(user.uid);
+      if (!dbUser) {
+        // If user doesn't exist in MongoDB, create them
+        await createUser({
+          firebaseId: user.uid,
+          email: user.email,
+          displayName: user.displayName || '',
+          schedule: {
+            Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: []
+          }
+        });
+      }
+    }
+    cb(user);
+  });
 }
 
 export async function signUp(email, password) {
   try {
-    return await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    // Create user in MongoDB
+    await createUser({
+      firebaseId: userCredential.user.uid,
+      email: userCredential.user.email,
+      displayName: userCredential.user.displayName || '',
+      schedule: {
+        Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: []
+      }
+    });
+    return userCredential;
   } catch (error) {
     console.error("Error signing up:", error);
     throw error;
