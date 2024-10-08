@@ -7,7 +7,7 @@
  */
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI;
+const uri = process.env.NEXT_PUBLIC_MONGODB_URI;
 const options = {
   useUnifiedTopology: true,
   useNewUrlParser: true,
@@ -16,11 +16,11 @@ const options = {
 let client;
 let clientPromise;
 
-if (!process.env.MONGODB_URI) {
+if (!process.env.NEXT_PUBLIC_MONGODB_URI) {
   throw new Error('Please add your Mongo URI to .env');
 }
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NEXT_PUBLIC_IS_PRODUCTION === 'false') {
   if (!global._mongoClientPromise) {
     client = new MongoClient(uri, options);
     global._mongoClientPromise = client.connect();

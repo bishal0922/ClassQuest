@@ -13,12 +13,15 @@
  */
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signUp } from '../lib/firebase/auth';
+import { signUp, signOut } from '../lib/firebase/auth';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '../lib/firebase/firebase-config';
+import { createUser, getUserByFirebaseId } from '../lib/userModel';
+import { Eye, EyeOff } from 'lucide-react';
+
 const Signup = () => {
   const [formData, setFormData] = useState({
     username: '',
@@ -26,121 +29,165 @@ const Signup = () => {
     password: '',
   });
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  
-  useEffect(() => {
-    console.log("Auth object:", auth);
-  }, []);;
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear errors when user starts typing
+    if (error) setError('');
+  };
+
+  const validateForm = () => {
+    if (!formData.username.trim()) {
+      setError('Username is required');
+      return false;
+    }
+    if (!formData.email.endsWith('@mavs.uta.edu')) {
+      setError('Please use a valid UTA email address (@mavs.uta.edu)');
+      return false;
+    }
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
+
+    if (!validateForm()) return;
+
+    setIsLoading(true);
 
     try {
+      // Check if user already exists
+      const existingUser = await getUserByFirebaseId(formData.email);
+      if (existingUser) {
+        setError('An account with this email already exists. Please log in.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Create user in Firebase
       const userCredential = await signUp(formData.email, formData.password);
       await updateProfile(userCredential.user, { displayName: formData.username });
-      router.push('/login');
+      
+      // Create user in MongoDB
+      await createUser({
+        firebaseId: userCredential.user.uid,
+        email: formData.email,
+        displayName: formData.username,
+        schedule: {
+          Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: []
+        }
+      });
+
+      setSuccessMessage('Account created successfully. Redirecting to login...');
+      setTimeout(() => router.push('/login'), 2000);
     } catch (error) {
       console.error("Error during sign up:", error);
-      setError(error.message);
+      setError(error.message || 'An error occurred during sign up. Please try again.');
+      
+      // If MongoDB creation fails, sign out the user from Firebase
+      try {
+        await signOut(auth);
+      } catch (signOutError) {
+        console.error("Error signing out after failed signup:", signOutError);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col justify-start py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign up for ClassQuest</h2>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
-              </label>
-              <div className="mt-1">
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                UTA Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="@mavs.uta.edu"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div>
+    <div className="flex justify-center items-center h-screen">
+      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md space-y-6">
+        <h2 className="text-3xl font-extrabold text-gray-900 text-center">
+          Sign up for ClassQuest
+        </h2>
+        
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        {successMessage && <p className="text-green-500 text-sm text-center">{successMessage}</p>}
+        
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              Username
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              onChange={handleChange}
+              value={formData.username}
+            />
+          </div>
+  
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              UTA Email address
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="youremail@mavs.uta.edu"
+              onChange={handleChange}
+              value={formData.email}
+            />
+          </div>
+  
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div className="mt-1 relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                required
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                onChange={handleChange}
+                value={formData.password}
+              />
               <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowPassword(!showPassword)}
               >
-                Sign up
+                {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
               </button>
             </div>
-          </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  Already have an account?
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Link href="/login"
-                className="w-full flex justify-center py-2 px-4 border border-solid rounded-md shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-gray-50">
-                  Log in
-              </Link>
-            </div>
           </div>
+  
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Signing up...' : 'Sign up'}
+          </button>
+        </form>
+  
+        <div className="text-sm text-center">
+          <span className="text-gray-500">Already have an account? </span>
+          <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+            Log in
+          </Link>
         </div>
       </div>
     </div>
