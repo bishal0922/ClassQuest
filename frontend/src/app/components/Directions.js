@@ -40,12 +40,35 @@ const Polyline = dynamic(
 );
 
 const campusLocations = {
-  "University Center": { lat: 32.73166141145963, lng: -97.11092778726972 },
-  "Engineering Research Building": { lat: 32.7333, lng: -97.1147 },
-  "Nedderman Hall": { lat: 32.7324, lng: -97.1134 },
-  "Science Hall": { lat: 32.7305, lng: -97.1123 },
-  "Fine Arts Building": { lat: 32.7289, lng: -97.1156 },
-  "Business Building": { lat: 32.7282, lng: -97.1108 },
+  "University Center": { lat: 32.731897244210096, lng: -97.11099924904617 },
+  "Engineering Research Building": { lat: 32.73333702123698, lng: -97.1131164068711 },
+  "Nedderman Hall": { lat: 32.7337022755903, lng: -97.11320930029531 },
+  "Science Hall": { lat: 32.73069739397386, lng: -97.11408697583421 },
+  "Fine Arts Building": { lat: 32.73115901946225, lng: -97.11505612711379 },
+  "Business Building": { lat: 32.72973107711824, lng: -97.11059611788998 },
+  "Pickard Hall": { lat: 32.72883603501483, lng: -97.11150948387406 },
+  "Trimble Hall": { lat: 32.72968750021006, lng: -97.1118692700786 },
+  "Central Library": { lat: 32.72970189356928, lng: -97.11289479815662 },
+  "School of Social Work & Smart Hospital": { lat: 32.72757544279192, lng: -97.11161184398559 },
+  "Science and Engineering Innovation and Research Building": { lat: 32.728097017859994, lng: -97.11295741128033 },
+  "Life Science Building": { lat: 32.728814833798204, lng: -97.11262716039163 },
+  "Chemistry and Physics Building": { lat: 32.73044779599053, lng: -97.11158711348065 },
+  "College Hall": { lat: 32.73083589291949, lng: -97.11152920983065 },
+  "Ransom Hall": { lat: 32.73086276937136, lng: -97.11218334034128 },
+  "Carlisle Hall": { lat: 32.73070120816642, lng: -97.11256379892923 },
+  "Preston Hall": { lat: 32.730898109204986, lng: -97.11291103173684 },
+  "Woolf Hall": { lat: 32.731516147192394, lng: -97.11264540501935 },
+  "Engineering Lab Building": { lat: 32.732370933591596, lng: -97.11268774362576 },
+  "GeoScience Building": { lat: 32.73159862153079, lng: -97.11388575761299 },
+  "University Hall": { lat: 32.72906000641466, lng: -97.11398422045163 },
+  "Texas Hall": { lat: 32.729718769054436, lng: -97.11554118233005 },
+  "College of Architecture Planning and Public Affairs": { lat: 32.731359108616104, lng: -97.11615933618393 },
+  "Nanotech Building": { lat: 32.73244492955757, lng: -97.1155722647836 },
+  "Maverick Activities Center": { lat: 32.73193506383788, lng: -97.1173917746016 },
+  "Physical Education Building": { lat: 32.73093693862163, lng: -97.11767824475697 },
+  "The Commons": { lat: 32.73281523014235, lng: -97.1170317234299 },
+  "College Park Center": { lat: 32.7306690798948, lng: -97.10804432529538 },
+  "UTA Bookstore": { lat: 32.73340801478887, lng: -97.10945663456641 }
 };
 
 const Directions = () => {
