@@ -30,12 +30,29 @@ async function fetchFromAPI(action, data) {
 }
 
 export async function createUser(userData) {
-  return fetchFromAPI('createUser', userData);
+  try {
+    const result = await fetchFromAPI('createUser', userData);
+    
+    // Check if the user was actually created
+    if (!result.user) {
+      throw new Error('User creation failed');
+    }
+    
+    return result.user;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
 }
 
 export async function getUserByFirebaseId(firebaseId) {
-  const result = await fetchFromAPI('getUserByFirebaseId', { firebaseId });
-  return result.user;
+  try {
+    const result = await fetchFromAPI('getUserByFirebaseId', { firebaseId });
+    return result.user;
+  } catch (error) {
+    console.error('Error getting user:', error);
+    throw error;
+  }
 }
 
 export async function updateUserSchedule(firebaseId, schedule) {

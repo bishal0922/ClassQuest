@@ -5,6 +5,7 @@
  * The MongoDB URI is retrieved from the environment variables. This URI contains the necessary information to connect to our MongoDB instance.
  * * Finally, we export the clientPromise, which will be used throughout the app to interact with the database.
  */
+// lib/mongodb.js
 import { MongoClient } from 'mongodb';
 
 const uri = process.env.NEXT_PUBLIC_MONGODB_URI;
@@ -31,4 +32,8 @@ if (process.env.NEXT_PUBLIC_IS_PRODUCTION === 'false') {
   clientPromise = client.connect();
 }
 
-export default clientPromise;
+export async function connectToDatabase() {
+  const client = await clientPromise;
+  const db = client.db();
+  return { db, client };
+}
