@@ -1,12 +1,5 @@
-type TailwindConfig = {
-  content: Array<string>,
-  theme: {
-    extend: Object,
-  },
-  plugins: Array<any>,
-};
-
-const config: TailwindConfig = {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -14,10 +7,11 @@ const config: TailwindConfig = {
   ],
   theme: {
     extend: {
-      // your theme extensions
+      colors: {
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+      },
     },
   },
   plugins: [],
 };
-
-module.exports = config;
