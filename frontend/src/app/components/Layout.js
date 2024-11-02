@@ -21,7 +21,8 @@ import { useAuthContext } from './AuthProvider';
 
 const Layout = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { user, isGuestMode, setGuestMode, signOut } = useAuthContext();
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const { user, isGuestMode, setGuestMode, signOut, loading } = useAuthContext();
     const pathname = usePathname();
     const router = useRouter();
     const sidebarRef = useRef(null);
@@ -33,6 +34,19 @@ const Layout = ({ children }) => {
         { href: '/compare', label: 'Compare', icon: BarChart2 },
         { href: '/directions', label: 'Directions', icon: Compass },
     ];
+
+    useEffect(() => {
+        // After initial authentication check is complete
+        if (!loading) {
+            setIsInitialLoad(false);
+            
+            // Redirect to home if not authenticated and not in guest mode
+            const isProtectedRoute = ['/schedule', '/search', '/compare', '/directions'].includes(pathname);
+            if (isProtectedRoute && !user && !isGuestMode) {
+                router.push('/');
+            }
+        }
+    }, [loading, user, isGuestMode, pathname, router]);
 
     const handleSignOut = () => {
         signOut();
@@ -51,6 +65,15 @@ const Layout = ({ children }) => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    // Show loading state during initial load
+    if (isInitialLoad) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+            </div>
+        );
+    }
 
     const showSidebar = user || isGuestMode;
 

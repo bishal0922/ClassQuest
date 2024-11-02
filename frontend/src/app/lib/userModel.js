@@ -31,16 +31,42 @@ async function fetchFromAPI(action, data) {
 
 export async function createUser(userData) {
   try {
-    const result = await fetchFromAPI('createUser', userData);
+    const result = await fetchFromAPI('createUser', {
+      ...userData,
+      schedule: {
+        Monday: [],
+        Tuesday: [],
+        Wednesday: [],
+        Thursday: [],
+        Friday: []
+      }
+    });
     
-    // Check if the user was actually created
-    if (!result.user) {
-      throw new Error('User creation failed');
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create user');
     }
     
     return result.user;
   } catch (error) {
     console.error('Error creating user:', error);
+    throw error;
+  }
+}
+
+export async function updateUser(firebaseId, updateData) {
+  try {
+    const result = await fetchFromAPI('updateUser', {
+      firebaseId,
+      ...updateData
+    });
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to update user');
+    }
+    
+    return result.user;
+  } catch (error) {
+    console.error('Error updating user:', error);
     throw error;
   }
 }
