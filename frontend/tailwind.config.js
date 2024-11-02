@@ -1,4 +1,3 @@
-// @flow
 type TailwindConfig = {
   content: Array<string>,
   theme: {

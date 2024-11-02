@@ -1,4 +1,3 @@
-// @flow strict
 /**
  * This is the Directions component. It's a simple map that allows you to select a start and end point.
  * Once you've selected both points, it will fetch the directions and display them on the map.

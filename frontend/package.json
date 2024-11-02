@@ -6,17 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "flow": "flow",
-    "flow:start": "flow start",
-    "flow:stop": "flow stop",
-    "flow:status": "flow status --show-all-errors",
-    "flow:coverage": "flow coverage",
-    "flow:check-strict": "flow check --all --show-all-errors",
-    "flow:watch": "flow status --watch",
-    "build:flow": "BABEL_ENV=production babel src/ -d dist/ --extensions '.js,.jsx' --copy-files --config-file ./babel.config.js",
-    "clean": "rm -rf dist",
-    "prebuild:flow": "npm run clean"
+    "lint": "next lint"
   },
   "dependencies": {
     "firebase": "^10.13.2",
@@ -33,25 +23,8 @@
     "react-leaflet-routing-machine": "^0.0.5"
   },
   "devDependencies": {
-    "@babel/cli": "^7.25.9",
-    "@babel/core": "^7.26.0",
-    "@babel/plugin-syntax-jsx": "^7.25.9",
-    "@babel/plugin-transform-react-jsx": "^7.25.9",
-    "@babel/preset-flow": "^7.25.9",
-    "@babel/preset-react": "^7.25.9",
-    "@next/eslint-plugin-next": "^15.0.1",
-    "babel-plugin-syntax-hermes-parser": "^0.25.0",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "^14.2.10",
-    "eslint-plugin-flowtype": "^8.0.3",
-    "eslint-plugin-jsx-a11y": "^6.10.1",
-    "eslint-plugin-react": "^7.37.2",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "eslint-plugin-security": "^3.0.1",
-    "eslint-plugin-sonarjs": "^2.0.4",
-    "eslint-plugin-unicorn": "^56.0.0",
-    "flow-bin": "^0.250.0",
-    "flow-typed": "^3.9.0",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.10",
     "postcss": "^8",
     "tailwindcss": "^3.4.1"
   }

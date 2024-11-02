@@ -1,4 +1,3 @@
-// @flow strict
 /**
  * This is the Layout component for our application.
  * 
