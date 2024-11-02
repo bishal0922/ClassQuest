@@ -16,7 +16,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, Home, Calendar, Search, BarChart2, LogOut, Compass, AlertTriangle, Map } from 'lucide-react';
+import { Menu, X, Home, Calendar, Search, BarChart2, LogOut, Users, Compass, AlertTriangle, Map } from 'lucide-react';
 import { useAuthContext } from './AuthProvider';
 
 const Layout = ({ children }) => {
@@ -31,10 +31,11 @@ const Layout = ({ children }) => {
         { href: '/', label: 'Home', icon: Home },
         { href: '/schedule', label: 'My Schedule', icon: Calendar },
         { href: '/search', label: 'Search Users', icon: Search },
+        { href: '/connections', label: 'Connections', icon: Users },
         { href: '/compare', label: 'Compare', icon: BarChart2 },
         { href: '/directions', label: 'Directions', icon: Compass },
         { href: '/map', label: 'Map', icon: Map},
-    ];
+      ];
 
     useEffect(() => {
         // After initial authentication check is complete
