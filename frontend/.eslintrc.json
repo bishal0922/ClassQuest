@@ -1,3 +1,47 @@
 {
-  "extends": ["next/babel", "next/core-web-vitals"]
+  "extends": [
+    "next/core-web-vitals",
+    "plugin:react/recommended",
+    "plugin:jsx-a11y/recommended"
+  ],
+  "plugins": [
+    "react",
+    "jsx-a11y"
+  ],
+  "rules": {
+    // React specific rules
+    "react/react-in-jsx-scope": "off",  
+    "react/prop-types": "error",
+    "react/no-array-index-key": "warn",
+    "react/no-deprecated": "error",
+    "react/no-direct-mutation-state": "error",
+    "react/no-unused-prop-types": "warn",
+    "react/no-unescaped-entities": "error",
+    "react/no-children-prop": "error",
+    "react/no-invalid-html-attribute": "error",
+    
+    // Hook rules
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    
+    // Accessibility rules
+    "jsx-a11y/alt-text": "error",
+    "jsx-a11y/anchor-is-valid": "error",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "jsx-a11y/no-static-element-interactions": "warn",
+    "jsx-a11y/label-has-associated-control": "error",
+    
+    // General JavaScript rules
+    "no-unused-vars": "warn",
+    "no-alert": "warn",
+    "no-debugger": "warn",
+    
+    // Best practices
+    "prefer-const": "warn",
+    "no-var": "error",
+    "eqeqeq": "warn",
+    
+    // Code style
+    "no-multiple-empty-lines": ["warn", { "max": 1 }]
+  }
 }

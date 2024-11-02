@@ -1,5 +1,13 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+// @flow
+type TailwindConfig = {
+  content: Array<string>,
+  theme: {
+    extend: Object,
+  },
+  plugins: Array<any>,
+};
+
+const config: TailwindConfig = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -7,11 +15,10 @@ module.exports = {
   ],
   theme: {
     extend: {
-      colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-      },
+      // your theme extensions
     },
   },
   plugins: [],
 };
+
+module.exports = config;

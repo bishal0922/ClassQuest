@@ -85,3 +85,103 @@ const SearchPage = () => {
 };
 
 export default SearchPage;
+
+
+// JUST ADDED TO CREATE A MOCK UP
+// "use client"
+// import React, { useState, useEffect } from 'react';
+// import { UserPlus } from 'lucide-react';
+
+// // Dummy data for search results with Chelsea FC players
+// const dummySearchResults = [
+//   { firebaseId: '9', displayName: 'Cole Palmer', email: 'cole.palmer@chelsea.com' },
+//   { firebaseId: '3', displayName: 'Reece James', email: 'reece.james@chelsea.com' },
+//   { firebaseId: '5', displayName: 'Enzo Fernández', email: 'enzo.fernandez@chelsea.com' },
+//   { firebaseId: '7', displayName: 'Mykhailo Mudryk', email: 'mykhailo.mudryk@chelsea.com' },
+//   { firebaseId: '8', displayName: 'Christopher Nkunku', email: 'christopher.nkunku@chelsea.com' },
+// ];
+
+// const SearchPage = () => {
+//   const [searchQuery, setSearchQuery] = useState('');
+//   const [searchResults, setSearchResults] = useState(dummySearchResults);
+//   const [isLoading, setIsLoading] = useState(false);
+
+//   const performSearch = () => {
+//     setIsLoading(true);
+//     // Simulate API call delay
+//     setTimeout(() => {
+//       const filteredResults = dummySearchResults.filter(
+//         user => user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+//                 user.email.toLowerCase().includes(searchQuery.toLowerCase())
+//       );
+//       setSearchResults(filteredResults);
+//       setIsLoading(false);
+//     }, 300);
+//   };
+
+//   useEffect(() => {
+//     const delayDebounceFn = setTimeout(() => {
+//       performSearch();
+//     }, 300);
+
+//     return () => clearTimeout(delayDebounceFn);
+//   }, [searchQuery]);
+
+//   const handleSearch = (e) => {
+//     e.preventDefault();
+//     performSearch();
+//   };
+
+//   const handleConnect = (userId) => {
+//     // Implement connection logic here
+//     console.log('Connecting with user:', userId);
+//   };
+
+//   return (
+//     <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+//       <h1 className="text-3xl font-bold text-gray-900 mb-6">Search Users</h1>
+//       <form onSubmit={handleSearch} className="mb-6">
+//         <div className="flex">
+//           <input
+//             type="text"
+//             value={searchQuery}
+//             onChange={(e) => setSearchQuery(e.target.value)}
+//             placeholder="Search by player name or email"
+//             className="flex-grow px-4 py-2 border border-gray-300 rounded-l-md focus:ring-indigo-500 focus:border-indigo-500"
+//           />
+//           <button
+//             type="submit"
+//             className="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+//           >
+//             Search
+//           </button>
+//         </div>
+//       </form>
+//       {isLoading && <p className="text-gray-500">Loading...</p>}
+//       {searchResults.length > 0 && (
+//         <ul className="divide-y divide-gray-200">
+//           {searchResults.map((result) => (
+//             <li key={result.firebaseId} className="py-4 flex items-center justify-between">
+//               <div>
+//                 <p className="text-sm font-medium text-gray-900">{result.displayName}</p>
+//                 <p className="text-sm text-gray-500">{result.email}</p>
+//               </div>
+//               <button
+//                 onClick={() => handleConnect(result.firebaseId)}
+//                 className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+//               >
+//                 <UserPlus className="mr-2 h-4 w-4" />
+//                 Connect
+//               </button>
+//             </li>
+//           ))}
+//         </ul>
+//       )}
+//       {searchResults.length === 0 && searchQuery && !isLoading && (
+//         <p className="text-gray-500">No players found.</p>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default SearchPage;
