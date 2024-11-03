@@ -30,8 +30,9 @@ const Layout = ({ children }) => {
     const navItems = [
         { href: '/', label: 'Home', icon: Home },
         { href: '/schedule', label: 'My Schedule', icon: Calendar },
-        { href: '/search', label: 'Search Users', icon: Search },
-        { href: '/connections', label: 'Connections', icon: Users },
+        { href: '/network', label: 'Friends', icon: Users},
+        // { href: '/search', label: 'Search Users', icon: Search },
+        // { href: '/connections', label: 'Connections', icon: Users },
         { href: '/compare', label: 'Compare', icon: BarChart2 },
         { href: '/directions', label: 'Directions', icon: Compass },
         { href: '/map', label: 'Map', icon: Map},
