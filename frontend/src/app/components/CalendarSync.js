@@ -2,17 +2,16 @@
 "use client";
 import React, { useState } from 'react';
 import { Calendar, X, AlertCircle, Check } from 'lucide-react';
-import { getCalendarEvents } from '../lib/googleIdentityService';
 
 const CalendarSync = ({ onEventsImported, onClose }) => {
   const [syncStatus, setSyncStatus] = useState('idle');
   const [detectedEvents, setDetectedEvents] = useState([]);
   const [selectedEvents, setSelectedEvents] = useState(new Set());
   const [error, setError] = useState(null);
-  const [debugLog, setDebugLog] = useState([]); // Add debug logging
+  const [debugLog, setDebugLog] = useState([]);
 
   const addDebugLog = (message) => {
-    console.log(message); // Also log to console
+    console.log(message);
     setDebugLog(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
   };
 
@@ -45,10 +44,59 @@ const CalendarSync = ({ onEventsImported, onClose }) => {
     };
   };
 
+  const getRecurringPattern = (event) => {
+    if (!event.recurrence) return null;
+    
+    const recurringRule = event.recurrence[0];
+    if (recurringRule.includes('FREQ=WEEKLY')) {
+      const days = {
+        'MO': 'Monday',
+        'TU': 'Tuesday',
+        'WE': 'Wednesday',
+        'TH': 'Thursday',
+        'FR': 'Friday'
+      };
+      
+      const matchDays = recurringRule.match(/BYDAY=([A-Z,]+)/);
+      if (matchDays) {
+        const daysList = matchDays[1].split(',')
+          .map(day => days[day])
+          .join(', ');
+        return `Every ${daysList}`;
+      }
+    }
+    return 'Recurring';
+  };
+
+  const deduplicateEvents = (events) => {
+    const uniqueEvents = new Map();
+
+    events.forEach(event => {
+      const key = event.summary + (event.location || '');
+      
+      if (!uniqueEvents.has(key)) {
+        if (event.recurrence) {
+          uniqueEvents.set(key, {
+            ...event,
+            recurringPattern: getRecurringPattern(event),
+            originalDates: [event.start.dateTime]
+          });
+        } else {
+          uniqueEvents.set(key, event);
+        }
+      } else if (event.recurrence) {
+        const existingEvent = uniqueEvents.get(key);
+        existingEvent.originalDates.push(event.start.dateTime);
+      }
+    });
+
+    return Array.from(uniqueEvents.values());
+  };
+
   const handleGoogleAuth = async () => {
     setError(null);
     setSyncStatus('syncing');
-    setDebugLog([]); // Clear previous logs
+    setDebugLog([]);
 
     try {
       addDebugLog('Starting calendar sync process');
@@ -85,16 +133,18 @@ const CalendarSync = ({ onEventsImported, onClose }) => {
             const data = await response.json();
             addDebugLog(`Found ${data.items?.length || 0} events`);
 
-            const events = (data.items || [])
+            const processedEvents = (data.items || [])
               .filter(event => event.start?.dateTime && event.end?.dateTime)
               .map(event => ({
                 ...event,
                 analysis: isLikelyClass(event)
-              }))
+              }));
+
+            const uniqueEvents = deduplicateEvents(processedEvents)
               .sort((a, b) => b.analysis.confidence - a.analysis.confidence);
 
-            addDebugLog(`Processed ${events.length} valid events`);
-            setDetectedEvents(events);
+            addDebugLog(`Processed ${uniqueEvents.length} unique events`);
+            setDetectedEvents(uniqueEvents);
             setSyncStatus('success');
           } catch (error) {
             addDebugLog(`Error processing events: ${error.message}`);
@@ -124,10 +174,32 @@ const CalendarSync = ({ onEventsImported, onClose }) => {
   const handleImport = () => {
     const selectedEventsData = detectedEvents
       .filter(event => selectedEvents.has(event.id))
-      .map(event => {
+      .flatMap(event => {
+        if (event.recurringPattern) {
+          const daysInPattern = event.recurringPattern
+            .replace('Every ', '')
+            .split(', ');
+          
+          return daysInPattern.map(day => ({
+            className: event.summary,
+            location: event.location || 'Not specified',
+            startTime: new Date(event.start.dateTime).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            }),
+            endTime: new Date(event.end.dateTime).toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            }),
+            dayOfWeek: day
+          }));
+        }
+        
         const startDate = new Date(event.start.dateTime);
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        return {
+        return [{
           className: event.summary,
           location: event.location || 'Not specified',
           startTime: startDate.toLocaleTimeString('en-US', { 
@@ -141,7 +213,7 @@ const CalendarSync = ({ onEventsImported, onClose }) => {
             hour12: true
           }),
           dayOfWeek: days[startDate.getDay()]
-        };
+        }];
       });
 
     onEventsImported(selectedEventsData);
@@ -181,7 +253,6 @@ const CalendarSync = ({ onEventsImported, onClose }) => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div>
           <p className="mt-2 text-gray-500">Analyzing your calendar...</p>
-          {/* Add debug log display */}
           <div className="mt-4 text-left text-xs text-gray-400 max-h-32 overflow-y-auto">
             {debugLog.map((log, index) => (
               <div key={index}>{log}</div>
@@ -222,7 +293,16 @@ const CalendarSync = ({ onEventsImported, onClose }) => {
                   <div className="ml-3 flex-1">
                     <p className="font-medium">{event.summary}</p>
                     <p className="text-sm text-gray-500">
-                      {new Date(event.start.dateTime).toLocaleString()}
+                      {new Date(event.start.dateTime).toLocaleTimeString([], { 
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                      {event.recurringPattern && (
+                        <span className="ml-2 text-indigo-600">
+                          ({event.recurringPattern})
+                        </span>
+                      )}
                     </p>
                     {event.location && (
                       <p className="text-sm text-gray-500">📍 {event.location}</p>
