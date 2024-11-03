@@ -1,19 +1,26 @@
+// src/app/components/CalendarSync.js
 "use client";
 import React, { useState } from 'react';
 import { Calendar, X, AlertCircle, Check } from 'lucide-react';
+import { getCalendarEvents } from '../lib/googleIdentityService';
 
 const CalendarSync = ({ onEventsImported, onClose }) => {
-  const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, success, error
+  const [syncStatus, setSyncStatus] = useState('idle');
   const [detectedEvents, setDetectedEvents] = useState([]);
   const [selectedEvents, setSelectedEvents] = useState(new Set());
+  const [error, setError] = useState(null);
+  const [debugLog, setDebugLog] = useState([]); // Add debug logging
 
-  // Helper function to detect if an event is likely a class
+  const addDebugLog = (message) => {
+    console.log(message); // Also log to console
+    setDebugLog(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
+  };
+
   const isLikelyClass = (event) => {
     const summary = event.summary?.toLowerCase() || '';
     const location = event.location?.toLowerCase() || '';
     const description = event.description?.toLowerCase() || '';
 
-    // Common patterns for academic events
     const patterns = {
       courseCode: /([A-Z]{2,4})\s*[-]?\s*(\d{3,4}[A-Z]?)/i,
       keywords: /(lecture|lab|seminar|class|course|exam)/i,
@@ -39,37 +46,71 @@ const CalendarSync = ({ onEventsImported, onClose }) => {
   };
 
   const handleGoogleAuth = async () => {
-    try {
-      setSyncStatus('syncing');
+    setError(null);
+    setSyncStatus('syncing');
+    setDebugLog([]); // Clear previous logs
 
-      // Get auth instance
-      const auth2 = window.gapi.auth2.getAuthInstance();
-      const user = await auth2.signIn();
+    try {
+      addDebugLog('Starting calendar sync process');
       
-      // List calendar events
-      const response = await window.gapi.client.calendar.events.list({
-        'calendarId': 'primary',
-        'timeMin': (new Date()).toISOString(),
-        'showDeleted': false,
-        'singleEvents': true,
-        'maxResults': 100,
-        'orderBy': 'startTime'
+      const tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/calendar.readonly',
+        callback: async (tokenResponse) => {
+          addDebugLog('Received token response');
+          
+          if (tokenResponse.error) {
+            addDebugLog(`Token error: ${tokenResponse.error}`);
+            setSyncStatus('error');
+            setError(`Authentication error: ${tokenResponse.error}`);
+            return;
+          }
+
+          try {
+            addDebugLog('Fetching calendar events');
+            const response = await fetch(
+              `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${new Date().toISOString()}&maxResults=100&orderBy=startTime&singleEvents=true`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${tokenResponse.access_token}`,
+                  'Accept': 'application/json',
+                },
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(`Calendar API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            addDebugLog(`Found ${data.items?.length || 0} events`);
+
+            const events = (data.items || [])
+              .filter(event => event.start?.dateTime && event.end?.dateTime)
+              .map(event => ({
+                ...event,
+                analysis: isLikelyClass(event)
+              }))
+              .sort((a, b) => b.analysis.confidence - a.analysis.confidence);
+
+            addDebugLog(`Processed ${events.length} valid events`);
+            setDetectedEvents(events);
+            setSyncStatus('success');
+          } catch (error) {
+            addDebugLog(`Error processing events: ${error.message}`);
+            setSyncStatus('error');
+            setError(error.message);
+          }
+        },
       });
 
-      // Process events
-      const events = response.result.items
-        .filter(event => event.start?.dateTime && event.end?.dateTime)
-        .map(event => ({
-          ...event,
-          analysis: isLikelyClass(event)
-        }))
-        .sort((a, b) => b.analysis.confidence - a.analysis.confidence);
-
-      setDetectedEvents(events);
-      setSyncStatus('success');
+      addDebugLog('Requesting access token');
+      tokenClient.requestAccessToken({ prompt: 'consent' });
     } catch (error) {
+      addDebugLog(`Initial error: ${error.message}`);
       console.error('Calendar sync error:', error);
       setSyncStatus('error');
+      setError(error.message || 'An error occurred while syncing with Google Calendar');
     }
   };
 
@@ -115,6 +156,12 @@ const CalendarSync = ({ onEventsImported, onClose }) => {
         </button>
       </div>
 
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-600">{error}</p>
+        </div>
+      )}
+
       {syncStatus === 'idle' && (
         <div className="text-center">
           <Calendar className="h-12 w-12 mx-auto text-indigo-500 mb-4" />
@@ -134,10 +181,16 @@ const CalendarSync = ({ onEventsImported, onClose }) => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div>
           <p className="mt-2 text-gray-500">Analyzing your calendar...</p>
+          {/* Add debug log display */}
+          <div className="mt-4 text-left text-xs text-gray-400 max-h-32 overflow-y-auto">
+            {debugLog.map((log, index) => (
+              <div key={index}>{log}</div>
+            ))}
+          </div>
         </div>
       )}
 
-      {syncStatus === 'success' && (
+      {syncStatus === 'success' && detectedEvents.length > 0 && (
         <div>
           <div className="bg-yellow-50 border border-yellow-100 rounded-md p-4 mb-4">
             <div className="flex">
@@ -205,15 +258,9 @@ const CalendarSync = ({ onEventsImported, onClose }) => {
         </div>
       )}
 
-      {syncStatus === 'error' && (
-        <div className="text-center text-red-600">
-          <p>Failed to connect to Google Calendar. Please try again.</p>
-          <button
-            onClick={() => setSyncStatus('idle')}
-            className="mt-2 text-indigo-600 hover:text-indigo-500"
-          >
-            Try Again
-          </button>
+      {syncStatus === 'success' && detectedEvents.length === 0 && (
+        <div className="text-center text-gray-500">
+          No events found in your calendar.
         </div>
       )}
     </div>

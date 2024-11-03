@@ -1,8 +1,8 @@
+// src/app/map/page.js
 "use client"
-
 import dynamic from 'next/dynamic';
+import MapInitializer from '../components/MapInitializer';
 
-// Dynamically import the MapComponent with no SSR
 const MapComponent = dynamic(() => import('../components/MapComponent'), {
   ssr: false,
   loading: () => (
@@ -13,7 +13,12 @@ const MapComponent = dynamic(() => import('../components/MapComponent'), {
 });
 
 const MapPage = () => {
-  return <MapComponent />;
+  return (
+    <>
+      <MapInitializer />
+      <MapComponent />
+    </>
+  );
 };
 
 export default MapPage;
