@@ -23,9 +23,10 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { Plus, X, ChevronDown, ChevronUp, Clock, MapPin, Edit2 } from 'lucide-react';
+import { Plus, X, ChevronDown, ChevronUp, Clock, MapPin, Edit2, Calendar } from 'lucide-react';
 import { useAuth } from '../lib/useAuth';
 import { getUserSchedule, updateUserSchedule } from '../lib/userModel';
+import CalendarSync from './CalendarSync'; // Import the new component
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
@@ -47,6 +48,7 @@ const ScheduleForm = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newClass, setNewClass] = useState({ className: '', location: '', startTime: '', endTime: '' });
   const [editingClass, setEditingClass] = useState(null);
+  const [showCalendarSync, setShowCalendarSync] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -54,6 +56,43 @@ const ScheduleForm = () => {
       fetchUserSchedule();
     }
   }, [user]);
+
+  const handleEventsImported = async (events) => {
+    const updatedSchedule = { ...schedule };
+    
+    events.forEach(event => {
+      const day = event.dayOfWeek;
+      if (updatedSchedule[day]) {
+        const isDuplicate = updatedSchedule[day].some(
+          existingClass => 
+            existingClass.className === event.className &&
+            existingClass.startTime === event.startTime
+        );
+  
+        if (!isDuplicate) {
+          updatedSchedule[day].push({
+            className: event.className,
+            location: event.location,
+            startTime: event.startTime,
+            endTime: event.endTime,
+            isImported: true
+          });
+          // Sort by start time
+          updatedSchedule[day].sort((a, b) => {
+            const timeA = new Date(`1970/01/01 ${a.startTime}`).getTime();
+            const timeB = new Date(`1970/01/01 ${b.startTime}`).getTime();
+            return timeA - timeB;
+          });
+        }
+      }
+    });
+  
+    setSchedule(updatedSchedule);
+    if (user) {
+      await updateUserSchedule(user.uid, updatedSchedule);
+    }
+    setShowCalendarSync(false);
+  };
 
   const fetchUserSchedule = async () => {
     if (user) {
@@ -184,6 +223,16 @@ const ScheduleForm = () => {
 
   return (
     <div className="max-w-full mx-auto p-2 sm:p-6 bg-gray-50 rounded-xl shadow-lg">
+
+<div className="flex justify-between items-center mb-6">
+  <button
+    onClick={() => setShowCalendarSync(true)}
+    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+  >
+    <Calendar className="mr-2 -ml-1 h-5 w-5" />
+    Import from Calendar
+  </button>
+</div>
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Your Weekly Schedule</h2>
       
       {/* Mobile Timetable View */}
@@ -362,6 +411,18 @@ const ScheduleForm = () => {
           </div>
         </div>
       )}
+
+      {/* Add this modal near the end of your return statement */}
+{showCalendarSync && (
+  <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg max-w-2xl w-full mx-4">
+      <CalendarSync 
+        onEventsImported={handleEventsImported}
+        onClose={() => setShowCalendarSync(false)}
+      />
+    </div>
+  </div>
+)}
     </div>
   );
 };

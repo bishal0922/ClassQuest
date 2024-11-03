@@ -37,3 +37,4 @@ next-env.d.ts
 
 # env
 frontend/.env
+frontend/googlesecrets.json

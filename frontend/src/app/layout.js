@@ -3,6 +3,7 @@ import Layout from "./components/Layout";
 import './styles/globals.css';
 import { AuthProvider } from './components/AuthProvider';
 import Script from 'next/script';
+import GoogleApiInitializer from './components/GoogleApiInitializer';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -37,6 +38,7 @@ export default function RootLayout({ children }) {
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
           <Layout>{children}</Layout>
+          <GoogleApiInitializer />
         </AuthProvider>
         <Script 
           src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
