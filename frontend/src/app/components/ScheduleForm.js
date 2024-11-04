@@ -29,7 +29,8 @@ import { getUserSchedule, updateUserSchedule } from '../lib/userModel';
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-const minutes = ['00', '15', '30', '45', '50'];
+const minutes = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'));
+
 
 const buildings = [
   "Nedderman Hall",

@@ -4,7 +4,7 @@
  * This page is part of the main application and will be displayed when users navigate to the schedule section.
  */
 import React from 'react';
-import ScheduleForm from '../components/ScheduleForm';
+import ScheduleForm from '../components/schedule/ScheduleForm';
 
 const SchedulePage = () => {
   return (

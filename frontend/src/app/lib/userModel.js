@@ -30,12 +30,55 @@ async function fetchFromAPI(action, data) {
 }
 
 export async function createUser(userData) {
-  return fetchFromAPI('createUser', userData);
+  try {
+    const result = await fetchFromAPI('createUser', {
+      ...userData,
+      schedule: {
+        Monday: [],
+        Tuesday: [],
+        Wednesday: [],
+        Thursday: [],
+        Friday: []
+      }
+    });
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create user');
+    }
+    
+    return result.user;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
+}
+
+export async function updateUser(firebaseId, updateData) {
+  try {
+    const result = await fetchFromAPI('updateUser', {
+      firebaseId,
+      ...updateData
+    });
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to update user');
+    }
+    
+    return result.user;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
 }
 
 export async function getUserByFirebaseId(firebaseId) {
-  const result = await fetchFromAPI('getUserByFirebaseId', { firebaseId });
-  return result.user;
+  try {
+    const result = await fetchFromAPI('getUserByFirebaseId', { firebaseId });
+    return result.user;
+  } catch (error) {
+    console.error('Error getting user:', error);
+    throw error;
+  }
 }
 
 export async function updateUserSchedule(firebaseId, schedule) {

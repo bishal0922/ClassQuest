@@ -1,3 +1,4 @@
+// src/app/layout.js
 import localFont from "next/font/local";
 import Layout from "./components/Layout";
 import './styles/globals.css';
@@ -25,27 +26,15 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-        />
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="beforeInteractive"
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
           <Layout>{children}</Layout>
         </AuthProvider>
-        <Script 
-          src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-          strategy="afterInteractive"
-        />
-        <Script 
-          src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );

@@ -1,7 +1,28 @@
+/* In /frontend/src/app/styles/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
   @apply bg-gray-100;
+}
+
+/* Add these styles to control Leaflet map z-index */
+.leaflet-container {
+  z-index: 10 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 20 !important;
+}
+
+/* Ensure popups don't get hidden */
+.leaflet-popup {
+  z-index: 25 !important;
+}
+
+/* Ensure controls are still accessible but below our sidebar */
+.leaflet-control {
+  z-index: 30 !important;
 }

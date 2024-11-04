@@ -16,12 +16,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, Home, Calendar, Search, BarChart2, LogOut, Compass, AlertTriangle } from 'lucide-react';
+import { Menu, X, Home, Calendar, Search, BarChart2, LogOut, Users, Compass, AlertTriangle, Map } from 'lucide-react';
 import { useAuthContext } from './AuthProvider';
 
 const Layout = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { user, isGuestMode, setGuestMode, signOut } = useAuthContext();
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const { user, isGuestMode, setGuestMode, signOut, loading } = useAuthContext();
     const pathname = usePathname();
     const router = useRouter();
     const sidebarRef = useRef(null);
@@ -29,10 +30,26 @@ const Layout = ({ children }) => {
     const navItems = [
         { href: '/', label: 'Home', icon: Home },
         { href: '/schedule', label: 'My Schedule', icon: Calendar },
-        { href: '/search', label: 'Search Users', icon: Search },
+        { href: '/network', label: 'Friends', icon: Users},
+        // { href: '/search', label: 'Search Users', icon: Search },
+        // { href: '/connections', label: 'Connections', icon: Users },
         { href: '/compare', label: 'Compare', icon: BarChart2 },
         { href: '/directions', label: 'Directions', icon: Compass },
-    ];
+        { href: '/map', label: 'Map', icon: Map},
+      ];
+
+    useEffect(() => {
+        // After initial authentication check is complete
+        if (!loading) {
+            setIsInitialLoad(false);
+            
+            // Redirect to home if not authenticated and not in guest mode
+            const isProtectedRoute = ['/schedule', '/search', '/compare', '/directions', '/map'].includes(pathname);
+            if (isProtectedRoute && !user && !isGuestMode) {
+                router.push('/');
+            }
+        }
+    }, [loading, user, isGuestMode, pathname, router]);
 
     const handleSignOut = () => {
         signOut();
@@ -52,12 +69,35 @@ const Layout = ({ children }) => {
         };
     }, []);
 
+    // Show loading state during initial load
+    if (isInitialLoad) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+            </div>
+        );
+    }
+
     const showSidebar = user || isGuestMode;
 
     return (
         <div className="flex h-screen overflow-hidden bg-indigo-50">
+            {/* Backdrop for mobile */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" 
+                    onClick={() => setSidebarOpen(false)}
+                ></div>
+            )}
+
             {showSidebar && (
-                <aside ref={sidebarRef} className={`fixed inset-y-0 left-0 z-50 w-72 bg-indigo-600 text-white flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
+                <aside 
+                    ref={sidebarRef} 
+                    className={`fixed inset-y-0 left-0 w-72 bg-indigo-600 text-white flex flex-col transform ${
+                        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                    } md:translate-x-0 transition-transform duration-300 ease-in-out z-50`}
+                    style={{ isolation: 'isolate' }}
+                >
                     <div className="flex items-center justify-between p-6 border-b border-indigo-500">
                         <h2 className="text-2xl font-bold">ClassQuest</h2>
                         <button onClick={() => setSidebarOpen(false)} className="md:hidden">
@@ -69,7 +109,9 @@ const Layout = ({ children }) => {
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`flex items-center py-4 px-6 text-sm font-medium ${pathname === item.href ? 'bg-indigo-700' : 'hover:bg-indigo-500'}`}
+                                className={`flex items-center py-4 px-6 text-sm font-medium ${
+                                    pathname === item.href ? 'bg-indigo-700' : 'hover:bg-indigo-500'
+                                }`}
                             >
                                 <item.icon className="mr-3 h-5 w-5" />
                                 {item.label}
@@ -86,7 +128,10 @@ const Layout = ({ children }) => {
                         </div>
                     )}
                     <div className="p-6">
-                        <button onClick={handleSignOut} className="flex items-center justify-center w-full py-3 px-4 bg-indigo-500 hover:bg-indigo-400 rounded-md transition-colors duration-200">
+                        <button 
+                            onClick={handleSignOut} 
+                            className="flex items-center justify-center w-full py-3 px-4 bg-indigo-500 hover:bg-indigo-400 rounded-md transition-colors duration-200"
+                        >
                             <LogOut className="mr-2 h-5 w-5" />
                             {isGuestMode ? 'Exit Guest Mode' : 'Logout'}
                         </button>
@@ -95,9 +140,9 @@ const Layout = ({ children }) => {
             )}
 
             {/* Main content area */}
-            <div className={`flex-1 flex flex-col ${showSidebar ? 'md:ml-72' : ''}`}>
+            <div className={`flex-1 flex flex-col ${showSidebar ? 'md:ml-72' : ''} relative`}>
                 {showSidebar && (
-                    <header className="bg-white shadow-sm z-30 md:hidden">
+                    <header className="bg-white shadow-sm md:hidden relative z-40">
                         <div className="px-4 py-4 flex justify-between items-center">
                             <h1 className="text-2xl font-semibold text-gray-900">ClassQuest</h1>
                             <button
@@ -112,7 +157,7 @@ const Layout = ({ children }) => {
                 )}
 
                 {isGuestMode && (
-                    <div className="bg-yellow-100 border-b border-yellow-200 px-4 py-3 text-yellow-800 md:hidden">
+                    <div className="bg-yellow-100 border-b border-yellow-200 px-4 py-3 text-yellow-800 md:hidden relative z-30">
                         <div className="flex items-center">
                             <AlertTriangle className="mr-2" size={20} />
                             <span className="font-semibold">Guest Mode</span>
@@ -121,20 +166,12 @@ const Layout = ({ children }) => {
                     </div>
                 )}
 
-                <main className="flex-1 overflow-y-auto bg-indigo-50">
+                <main className="flex-1 overflow-y-auto bg-indigo-50 relative">
                     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                         {children}
                     </div>
                 </main>
             </div>
-
-            {/* Overlay for mobile */}
-            {sidebarOpen && (
-                <div 
-                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" 
-                    onClick={() => setSidebarOpen(false)}
-                ></div>
-            )}
         </div>
     );
 };
