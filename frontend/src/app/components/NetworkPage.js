@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuthContext } from '../components/AuthProvider';
 import { 
   UserPlus, UserCheck, UserX, Clock, Search as SearchIcon, 
-  Users, Mail, Filter, RefreshCw 
+  Users, Mail, Filter, RefreshCw, Lock 
 } from 'lucide-react';
+import RestrictedFeatureModal from './RestrictedFeatureModal';
+
 
 const NetworkPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -13,8 +15,34 @@ const NetworkPage = () => {
   const [connections, setConnections] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState('all'); // all, connected, pending, received
-  const { user } = useAuthContext();
+  const [activeTab, setActiveTab] = useState('all');
+  const [showRestrictedModal, setShowRestrictedModal] = useState(false);
+  const { user, isGuestMode } = useAuthContext();
+
+  const handleGuestSearch = (e) => {
+    e.preventDefault();
+    setShowRestrictedModal(true);
+  };
+
+  const getEmptyStateMessage = () => {
+    if (isGuestMode) {
+      return {
+        all: 'Sign up to connect with other students!',
+        connected: 'Create an account to build your network',
+        pending: 'Sign up to send connection requests',
+        received: 'Create an account to receive connection requests',
+        search: searchQuery ? 'Sign up to search for other students' : 'Create an account to search for other students'
+      }[activeTab];
+    }
+
+    return {
+      all: 'No connections yet',
+      connected: 'No connections yet',
+      pending: 'No pending requests sent',
+      received: 'No pending requests received',
+      search: searchQuery ? 'No users found matching your search' : 'Search for users above'
+    }[activeTab];
+  };
   
   // Connection status maps
   const [connectionStatuses, setConnectionStatuses] = useState({
@@ -162,6 +190,62 @@ const NetworkPage = () => {
     return 'none';
   };
 
+  const renderConnectionButton = (userId) => {
+    const status = getConnectionStatus(userId);
+    
+    switch (status) {
+      case 'connected':
+        return (
+          <button
+            onClick={() => handleRejectOrRemoveConnection(userId)}
+            className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200"
+          >
+            <UserCheck className="mr-2 h-4 w-4" />
+            Connected
+          </button>
+        );
+      case 'pending':
+        return (
+          <button
+            onClick={() => handleRejectOrRemoveConnection(userId)}
+            className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-yellow-700 bg-yellow-100 hover:bg-yellow-200"
+          >
+            <Clock className="mr-2 h-4 w-4" />
+            Cancel Request
+          </button>
+        );
+      case 'requested':
+        return (
+          <div className="flex space-x-2">
+            <button
+              onClick={() => handleAcceptRequest(userId)}
+              className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200"
+            >
+              <UserCheck className="mr-2 h-4 w-4" />
+              Accept
+            </button>
+            <button
+              onClick={() => handleRejectOrRemoveConnection(userId)}
+              className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200"
+            >
+              <UserX className="mr-2 h-4 w-4" />
+              Reject
+            </button>
+          </div>
+        );
+      default:
+        return (
+          <button
+            onClick={() => handleConnect(userId)}
+            className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Connect
+          </button>
+        );
+    }
+  };
+
   const renderActionButton = (userId) => {
     const status = getConnectionStatus(userId);
     
@@ -254,19 +338,21 @@ const NetworkPage = () => {
     <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">Network</h1>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={fetchUserConnections}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </button>
-        </div>
+        {!isGuestMode && (
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={fetchUserConnections}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Search Bar */}
-      <form onSubmit={handleSearch} className="mb-6">
+      <form onSubmit={isGuestMode ? handleGuestSearch : handleSearch} className="mb-6">
         <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
           <div className="flex-grow relative">
             <input
@@ -281,9 +367,14 @@ const NetworkPage = () => {
           <button
             type="submit"
             disabled={isSearching || !searchQuery.trim()}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center justify-center
+              ${isGuestMode 
+                ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400'} 
+              disabled:cursor-not-allowed`}
           >
-            {isSearching ? 'Searching...' : 'Search'}
+            {isGuestMode && <Lock className="mr-2 h-4 w-4" />}
+            {isSearching ? 'Searching...' : isGuestMode ? 'Sign Up to Search' : 'Search'}
           </button>
         </div>
       </form>
@@ -327,6 +418,34 @@ const NetworkPage = () => {
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         </div>
+      ) : isGuestMode ? (
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <div className="flex flex-col items-center">
+            <div className="rounded-full bg-yellow-100 p-3 mb-4">
+              <Lock className="h-8 w-8 text-yellow-600" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Limited Access in Guest Mode
+            </h3>
+            <p className="text-gray-500 max-w-sm mb-6">
+              Create an account to connect with other students, share schedules, and more!
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href="/signup"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                Sign Up Now
+              </a>
+              <a
+                href="/login"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Log In
+              </a>
+            </div>
+          </div>
+        </div>
       ) : filteredConnections.length > 0 ? (
         <div className="bg-white shadow overflow-hidden rounded-md">
           <ul className="divide-y divide-gray-200">
@@ -356,7 +475,7 @@ const NetworkPage = () => {
                       </div>
                     </div>
                     <div>
-                      {renderActionButton(userData.firebaseId)}
+                      {renderConnectionButton(userData.firebaseId)}
                     </div>
                   </div>
                 </li>
@@ -365,16 +484,27 @@ const NetworkPage = () => {
           </ul>
         </div>
       ) : (
-        <div className="text-center py-8 text-gray-500">
-          {activeTab === 'search' ? 
-            searchQuery ? 'No users found matching your search' : 'Search for users above' :
-            activeTab === 'connected' ? 'No connections yet' :
-            activeTab === 'pending' ? 'No pending requests sent' :
-            activeTab === 'received' ? 'No pending requests received' :
-            'No users found'
-          }
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <div className="flex flex-col items-center">
+            <div className="rounded-full bg-gray-100 p-3 mb-4">
+              <Users className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {activeTab === 'search' ? 'No Results Found' : 'No Connections Yet'}
+            </h3>
+            <p className="text-gray-500 max-w-sm">
+              {getEmptyStateMessage()}
+            </p>
+          </div>
         </div>
       )}
+
+      {/* Restricted Feature Modal */}
+      <RestrictedFeatureModal
+        isOpen={showRestrictedModal}
+        onClose={() => setShowRestrictedModal(false)}
+        featureName="User Search"
+      />
     </div>
   );
 };

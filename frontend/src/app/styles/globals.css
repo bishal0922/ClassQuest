@@ -7,9 +7,24 @@ body {
   @apply bg-gray-100;
 }
 
-/* Add these styles to control Leaflet map z-index */
+/* Leaflet Map Styles */
 .leaflet-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
   z-index: 10 !important;
+}
+
+.leaflet-control-container .leaflet-control {
+  z-index: 30 !important;
+}
+
+.leaflet-pane {
+  z-index: 15 !important;
+}
+
+.leaflet-popup {
+  z-index: 25 !important;
 }
 
 .leaflet-top,
@@ -17,12 +32,8 @@ body {
   z-index: 20 !important;
 }
 
-/* Ensure popups don't get hidden */
-.leaflet-popup {
-  z-index: 25 !important;
-}
-
-/* Ensure controls are still accessible but below our sidebar */
-.leaflet-control {
-  z-index: 30 !important;
+.map-wrapper {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
 }

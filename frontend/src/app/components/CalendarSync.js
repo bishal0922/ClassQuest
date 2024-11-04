@@ -18,6 +18,8 @@ import {
   Beaker,
 } from "lucide-react";
 import { analyzeEventType, EVENT_TYPES } from "./utility/calendarImportService";
+import { useAuthContext } from "./AuthProvider";
+import RestrictedFeatureModal from "./RestrictedFeatureModal";
 
 const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
   const [syncStatus, setSyncStatus] = useState("idle");
@@ -31,6 +33,17 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
     existing: 0,
     updated: 0,
   });
+  const { user, isGuestMode } = useAuthContext();
+
+  if (isGuestMode) {
+    return (
+      <RestrictedFeatureModal
+        isOpen={true}
+        onClose={onClose}
+        featureName="Calendar Sync"
+      />
+    );
+  }
 
   const addDebugLog = (message) => {
     console.log(message);
