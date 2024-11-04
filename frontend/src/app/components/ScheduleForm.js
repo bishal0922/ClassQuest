@@ -32,10 +32,17 @@ import {
   MapPin,
   Edit2,
   Calendar,
+  BookOpen,
+  FileSpreadsheet,
+  ClipboardList,
+  FileText,
+  Beaker,
+  CircleIcon,
 } from "lucide-react";
 import { useAuth } from "../lib/useAuth";
 import { getUserSchedule, updateUserSchedule } from "../lib/userModel";
 import CalendarSync from "./CalendarSync";
+import { EVENT_TYPES } from "./utility/calendarImportService";
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const hours = Array.from({ length: 12 }, (_, i) =>
@@ -52,6 +59,77 @@ const buildings = [
   "Woolf Hall",
   "ERB",
 ];
+
+const eventTypeConfig = {
+  [EVENT_TYPES.CLASS]: {
+    icon: BookOpen,
+    color: "bg-blue-500",
+    hoverColor: "hover:bg-blue-600",
+    label: "Class",
+    placeholder: "Enter class name (e.g., CSE 1320)",
+  },
+  [EVENT_TYPES.EXAM]: {
+    icon: FileSpreadsheet,
+    color: "bg-red-500",
+    hoverColor: "hover:bg-red-600",
+    label: "Exam",
+    placeholder: "Enter exam name (e.g., Midterm 1)",
+  },
+  [EVENT_TYPES.QUIZ]: {
+    icon: ClipboardList,
+    color: "bg-orange-500",
+    hoverColor: "hover:bg-orange-600",
+    label: "Quiz",
+    placeholder: "Enter quiz name",
+  },
+  [EVENT_TYPES.ASSIGNMENT]: {
+    icon: FileText,
+    color: "bg-green-500",
+    hoverColor: "hover:bg-green-600",
+    label: "Assignment",
+    placeholder: "Enter assignment name",
+  },
+  [EVENT_TYPES.LAB]: {
+    icon: Beaker,
+    color: "bg-purple-500",
+    hoverColor: "hover:bg-purple-600",
+    label: "Lab",
+    placeholder: "Enter lab name",
+  },
+  [EVENT_TYPES.OTHER]: {
+    icon: Calendar,
+    color: "bg-gray-500",
+    hoverColor: "hover:bg-gray-600",
+    label: "Other",
+    placeholder: "Enter event name",
+  },
+};
+
+const EventTypeSelector = ({ selectedType, onSelect }) => {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+      {Object.entries(eventTypeConfig).map(([type, config]) => {
+        const Icon = config.icon;
+        const isSelected = selectedType === type;
+        return (
+          <button
+            key={type}
+            onClick={() => onSelect(type)}
+            className={`
+              ${isSelected ? `${config.color} text-white` : 'bg-gray-100 text-gray-600'}
+              ${config.hoverColor} transition-colors duration-200
+              p-3 rounded-lg flex flex-col items-center justify-center gap-2
+              border-2 ${isSelected ? 'border-transparent' : 'border-gray-200'}
+            `}
+          >
+            <Icon className={`h-6 w-6 ${isSelected ? 'text-white' : 'text-gray-600'}`} />
+            <span className="text-sm font-medium">{config.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
 
 const ScheduleForm = () => {
   const [schedule, setSchedule] = useState({
@@ -71,6 +149,13 @@ const ScheduleForm = () => {
   });
   const [editingClass, setEditingClass] = useState(null);
   const [showCalendarSync, setShowCalendarSync] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    type: EVENT_TYPES.CLASS,
+    title: "",
+    location: "",
+    startTime: "08:00 AM",
+    endTime: "09:00 AM",
+  });
   const { user } = useAuth();
 
   useEffect(() => {
@@ -141,52 +226,54 @@ const ScheduleForm = () => {
   // Update addOrUpdateClass to handle the time conversion properly
   const addOrUpdateClass = async () => {
     const updatedSchedule = { ...schedule };
-
+  
     // Parse and format times
-    const formatClassTimes = (classData) => {
-      const [startTime, startPeriod] = classData.startTime.split(" ");
-      const [startHour, startMinute] = startTime.split(":");
-      const [endTime, endPeriod] = classData.endTime.split(" ");
-      const [endHour, endMinute] = endTime.split(":");
-
+    const formatClassTimes = (eventData) => {
+      const [startTimeStr, startPeriod] = eventData.startTime.split(" ");
+      const [endTimeStr, endPeriod] = eventData.endTime.split(" ");
+      const [startHour, startMinute] = startTimeStr.split(":");
+      const [endHour, endMinute] = endTimeStr.split(":");
+  
       return {
-        ...classData,
+        className: eventData.title, // Use the title from newEvent
+        location: eventData.location,
         startTime: convertTo24Hour(startHour, startMinute, startPeriod),
         endTime: convertTo24Hour(endHour, endMinute, endPeriod),
+        eventType: eventData.type // Store the event type
       };
     };
-
+  
     if (editingClass !== null) {
       updatedSchedule[activeDay] = updatedSchedule[activeDay].filter(
         (_, index) => index !== editingClass
       );
     }
-
-    const formattedClass = formatClassTimes(newClass);
+  
+    const formattedClass = formatClassTimes(newEvent);
     updatedSchedule[activeDay].push(formattedClass);
-
+  
     // Sort classes by start time
     updatedSchedule[activeDay].sort((a, b) => {
       const timeA = new Date(`1970/01/01 ${a.startTime}`).getTime();
       const timeB = new Date(`1970/01/01 ${b.startTime}`).getTime();
       return timeA - timeB;
     });
-
+  
     setSchedule(updatedSchedule);
     if (user) {
       await updateUserSchedule(user.uid, updatedSchedule);
     }
-
+  
     setIsModalOpen(false);
-    setNewClass({
-      className: "",
+    setNewEvent({
+      type: EVENT_TYPES.CLASS,
+      title: "",
       location: "",
       startTime: "08:00 AM",
       endTime: "09:00 AM",
     });
     setEditingClass(null);
   };
-
   const removeClass = async (day, index) => {
     const updatedSchedule = { ...schedule };
     updatedSchedule[day] = updatedSchedule[day].filter((_, i) => i !== index);
@@ -205,47 +292,39 @@ const ScheduleForm = () => {
 
   const editClass = (day, index) => {
     const classToEdit = schedule[day][index];
-
-    // Parse the time string to get the correct hour in 12-hour format
+  
     const parseTimeFor12Hour = (timeStr) => {
       const [time, period] = timeStr.split(" ");
       let [hours, minutes] = time.split(":").map(Number);
-
-      // Convert from 24-hour to 12-hour format
+  
       if (period === "PM" && hours > 12) {
         hours -= 12;
       }
       if (period === "AM" && hours === 0) {
         hours = 12;
       }
-
+  
       return {
         hour: hours.toString().padStart(2, "0"),
         minute: minutes.toString().padStart(2, "0"),
         period,
       };
     };
-
+  
     const startTime = parseTimeFor12Hour(classToEdit.startTime);
     const endTime = parseTimeFor12Hour(classToEdit.endTime);
-
-    const editedClass = {
-      ...classToEdit,
+  
+    setActiveDay(day);
+    setNewEvent({
+      type: classToEdit.eventType || EVENT_TYPES.CLASS,
+      title: classToEdit.className,
+      location: classToEdit.location,
       startTime: `${startTime.hour}:${startTime.minute} ${startTime.period}`,
       endTime: `${endTime.hour}:${endTime.minute} ${endTime.period}`,
-    };
-
-    console.log("Editing class:", {
-      original: classToEdit,
-      parsed: editedClass,
     });
-
-    setActiveDay(day);
-    setNewClass(editedClass);
     setEditingClass(index);
     setIsModalOpen(true);
   };
-
   // Add a helper function to convert back to 24-hour format when saving
   const convertTo24Hour = (hour, minute, period) => {
     hour = parseInt(hour);
@@ -316,25 +395,25 @@ const ScheduleForm = () => {
 
   // Update the renderTimeSelector function
   const renderTimeSelector = (type) => {
-    const timeValue = newClass[type];
+    const timeValue = newEvent[type]; // Changed from newClass to newEvent
     const [time, period] = timeValue.split(" ");
     const [hour, minute] = time.split(":");
-
+  
     const updateTime = (field, value) => {
       let updatedHour = field === "hour" ? value : hour;
       let updatedMinute = field === "minute" ? value : minute;
       let updatedPeriod = field === "period" ? value : period;
-
+  
       const formattedTime = `${updatedHour}:${updatedMinute} ${updatedPeriod}`;
-      setNewClass({ ...newClass, [type]: formattedTime });
+      setNewEvent({ ...newEvent, [type]: formattedTime }); // Changed from newClass to newEvent
     };
-
+  
     return (
       <div className="flex space-x-2">
         <select
           value={hour}
           onChange={(e) => updateTime("hour", e.target.value)}
-          className="w-1/3 p-2 border rounded"
+          className="w-20 px-2 py-1 border rounded focus:ring-2 focus:ring-indigo-500"
         >
           {hours.map((h) => (
             <option key={h} value={h}>
@@ -345,7 +424,7 @@ const ScheduleForm = () => {
         <select
           value={minute}
           onChange={(e) => updateTime("minute", e.target.value)}
-          className="w-1/3 p-2 border rounded"
+          className="w-20 px-2 py-1 border rounded focus:ring-2 focus:ring-indigo-500"
         >
           {minutes.map((m) => (
             <option key={m} value={m}>
@@ -356,7 +435,7 @@ const ScheduleForm = () => {
         <select
           value={period}
           onChange={(e) => updateTime("period", e.target.value)}
-          className="w-1/3 p-2 border rounded"
+          className="w-20 px-2 py-1 border rounded focus:ring-2 focus:ring-indigo-500"
         >
           <option value="AM">AM</option>
           <option value="PM">PM</option>
@@ -364,7 +443,6 @@ const ScheduleForm = () => {
       </div>
     );
   };
-
   const getCurrentScheduleEvents = () => {
     return Object.entries(schedule).flatMap(([day, classes]) =>
       classes.map((cls) => ({
@@ -538,23 +616,24 @@ const ScheduleForm = () => {
                     </div>
                   </div>
                 ))}
-                <button
-                  onClick={() => {
-                    setIsModalOpen(true);
-                    setActiveDay(day);
-                    setEditingClass(null);
-                    setNewClass({
-                      className: "",
-                      location: "",
-                      startTime: "08:00 AM",
-                      endTime: "09:00 AM",
-                    });
-                  }}
-                  className="mt-2 flex items-center justify-center w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                  Add Class
-                </button>
+        <button
+  onClick={() => {
+    setIsModalOpen(true);
+    setActiveDay(day);
+    setEditingClass(null);
+    setNewEvent({
+      type: EVENT_TYPES.CLASS,
+      title: "",
+      location: "",
+      startTime: newEvent.startTime, // Preserve the selected times
+      endTime: newEvent.endTime,     // instead of resetting them
+    });
+  }}
+  className="mt-2 flex items-center justify-center w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+>
+  <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+  Add Class
+</button>
               </div>
             )}
           </div>
@@ -563,77 +642,122 @@ const ScheduleForm = () => {
 
       {/* Add/Edit Class Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">
-              {editingClass !== null ? "Edit" : "Add"} Class for {activeDay}
-            </h3>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-xl mx-4">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-2xl font-semibold text-gray-900">
+            {editingClass !== null ? "Edit" : "Add"} Event
+          </h3>
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="text-gray-400 hover:text-gray-500 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          {/* Event Type Selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Event Type
+            </label>
+            <EventTypeSelector
+              selectedType={newEvent.type}
+              onSelect={(type) => setNewEvent({ ...newEvent, type })}
+            />
+          </div>
+
+          {/* Title Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {eventTypeConfig[newEvent.type].label} Name
+            </label>
             <input
               type="text"
-              placeholder="Class Name"
-              value={newClass.className}
+              placeholder={eventTypeConfig[newEvent.type].placeholder}
+              value={newEvent.title}
               onChange={(e) =>
-                setNewClass({ ...newClass, className: e.target.value })
+                setNewEvent({ ...newEvent, title: e.target.value })
               }
-              className="w-full mb-2 p-2 border rounded"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             />
+          </div>
+
+          {/* Location Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Location
+            </label>
             <select
-              value={newClass.location}
+              value={newEvent.location}
               onChange={(e) =>
-                setNewClass({ ...newClass, location: e.target.value })
+                setNewEvent({ ...newEvent, location: e.target.value })
               }
-              className="w-full mb-2 p-2 border rounded"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             >
-              <option value="">Select Building</option>
+              <option value="">Select Location</option>
               {buildings.map((building) => (
                 <option key={building} value={building}>
                   {building}
                 </option>
               ))}
             </select>
-            <div className="mb-2">
-              <label className="block text-sm font-medium text-gray-700">
+          </div>
+
+          {/* Time Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Start Time
               </label>
               {renderTimeSelector("startTime")}
             </div>
-            <div className="mb-2">
-              <label className="block text-sm font-medium text-gray-700">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 End Time
               </label>
               {renderTimeSelector("endTime")}
             </div>
-            <div className="flex justify-between mt-4">
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                {editingClass !== null && (
-                  <button
-                    onClick={() => {
-                      removeClass(activeDay, editingClass);
-                      setIsModalOpen(false);
-                    }}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            {editingClass !== null && (
               <button
-                onClick={addOrUpdateClass}
-                disabled={!validateClassTimes()}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                onClick={() => {
+                  removeClass(activeDay, editingClass);
+                  setIsModalOpen(false);
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
               >
-                {editingClass !== null ? "Update" : "Add"} Class
+                Delete
               </button>
-            </div>
+            )}
+            <button
+              onClick={addOrUpdateClass}
+              disabled={!validateClassTimes()}
+              className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors
+                ${
+                  validateClassTimes()
+                    ? `${eventTypeConfig[newEvent.type].color} ${eventTypeConfig[newEvent.type].hoverColor}`
+                    : "bg-gray-400 cursor-not-allowed"
+                }`}
+            >
+              {editingClass !== null ? "Update" : "Add"}{" "}
+              {eventTypeConfig[newEvent.type].label}
+            </button>
           </div>
         </div>
-      )}
+      </div>
+    </div>
+  )}
 
       {/* Calendar Sync Modal */}
       {showCalendarSync && (
