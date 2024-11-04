@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, Home, Calendar, Search, BarChart2, LogOut, Users, Compass, AlertTriangle, Map } from 'lucide-react';
 import { useAuthContext } from './AuthProvider';
-
+import { Toaster, toast } from 'react-hot-toast';
 const Layout = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -31,13 +31,38 @@ const Layout = ({ children }) => {
         { href: '/', label: 'Home', icon: Home },
         { href: '/schedule', label: 'My Schedule', icon: Calendar },
         { href: '/network', label: 'Friends', icon: Users},
-        // { href: '/search', label: 'Search Users', icon: Search },
-        // { href: '/connections', label: 'Connections', icon: Users },
         { href: '/compare', label: 'Compare', icon: BarChart2 },
         { href: '/directions', label: 'Directions', icon: Compass },
-        { href: '/map', label: 'Map', icon: Map},
-      ];
+        { href: '/map', label: 'Map', icon: Map, requiresAuth: true }, // Added requiresAuth flag
+    ];
 
+    const handleNavigation = (href, requiresAuth) => {
+        if (requiresAuth && isGuestMode) {
+            toast.error(
+              <div className="flex flex-col">
+                <span className="font-medium">Access Restricted</span>
+                <span className="text-sm">Please sign in to access the map feature</span>
+              </div>,
+              {
+                duration: 3000,
+                position: 'top-center',
+                className: 'bg-white',
+                icon: '🔒',
+                style: {
+                  border: '1px solid #E2E8F0',
+                  padding: '16px',
+                  color: '#1F2937',
+                },
+              }
+            );
+            router.push('/');
+            setSidebarOpen(false);
+            return;
+        }
+        router.push(href);
+        setSidebarOpen(false);
+    };
+    
     useEffect(() => {
         // After initial authentication check is complete
         if (!loading) {
@@ -82,6 +107,9 @@ const Layout = ({ children }) => {
 
     return (
         <div className="flex h-screen overflow-hidden bg-indigo-50">
+            {/* Add Toaster component */}
+            <Toaster />
+
             {/* Backdrop for mobile */}
             {sidebarOpen && (
                 <div 
@@ -90,7 +118,7 @@ const Layout = ({ children }) => {
                 ></div>
             )}
 
-            {showSidebar && (
+{showSidebar && (
                 <aside 
                     ref={sidebarRef} 
                     className={`fixed inset-y-0 left-0 w-72 bg-indigo-600 text-white flex flex-col transform ${
@@ -106,18 +134,19 @@ const Layout = ({ children }) => {
                     </div>
                     <nav className="flex-grow mt-8">
                         {navItems.map((item) => (
-                            <Link
+                            <button
                                 key={item.href}
-                                href={item.href}
-                                className={`flex items-center py-4 px-6 text-sm font-medium ${
+                                onClick={() => handleNavigation(item.href, item.requiresAuth)}
+                                className={`flex w-full items-center py-4 px-6 text-sm font-medium ${
                                     pathname === item.href ? 'bg-indigo-700' : 'hover:bg-indigo-500'
                                 }`}
                             >
                                 <item.icon className="mr-3 h-5 w-5" />
                                 {item.label}
-                            </Link>
+                            </button>
                         ))}
                     </nav>
+
                     {isGuestMode && (
                         <div className="px-6 py-4 bg-indigo-700">
                             <div className="flex items-center text-yellow-300 mb-2">

@@ -1,41 +1,31 @@
-/**
- * This is the Directions component. It's a simple map that allows you to select a start and end point.
- * Once you've selected both points, it will fetch the directions and display them on the map.
- * You can also copy, share, and save the directions as an image.
- * 
- * The component uses the react-leaflet library for the map functionality.
- * It dynamically imports the necessary components to reduce the initial bundle size.
- * 
- * The map is initialized with a set of campus locations, and you can select the start and end points by clicking on the map.
- * 
- * The directions are fetched from a third-party API and displayed as a list of steps.
- * 
- * The map also provides options to copy, share, and save the directions as an image.
- * 
- * The component is designed to be used in a larger application
- */
+// src/app/components/Directions.js
 "use client";
-import React, { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
-import { Copy, Share2 } from "lucide-react";
 
+import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { Copy, Share2 } from 'lucide-react';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Dynamic imports
 const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  () => import('react-leaflet').then((mod) => mod.MapContainer),
   { ssr: false }
 );
 const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  () => import('react-leaflet').then((mod) => mod.TileLayer),
   { ssr: false }
 );
 const Marker = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Marker),
+  () => import('react-leaflet').then((mod) => mod.Marker),
   { ssr: false }
 );
-const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
-  ssr: false,
-});
+const Popup = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Popup),
+  { ssr: false }
+);
 const Polyline = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Polyline),
+  () => import('react-leaflet').then((mod) => mod.Polyline),
   { ssr: false }
 );
 
@@ -77,10 +67,23 @@ const Directions = () => {
   const [directions, setDirections] = useState([]);
   const [route, setRoute] = useState([]);
   const [error, setError] = useState(null);
-  const [isMapReady, setIsMapReady] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    setIsMapReady(true);
+    if (typeof window !== 'undefined') {
+      setMapReady(true);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        const containers = document.querySelectorAll('.leaflet-container');
+        containers.forEach(container => {
+          if (container._leaflet_id) {
+            container._leaflet_id = null;
+          }
+        });
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -166,7 +169,7 @@ const Directions = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 relative z-0 pb-20 md:pb-12">
+    <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">UTA Campus Directions</h1>
       <div className="flex flex-col md:flex-row mb-4 space-y-4 md:space-y-0 md:space-x-4">
         <div className="w-full md:w-1/2">
@@ -199,13 +202,15 @@ const Directions = () => {
         </div>
       </div>
 
-      {isMapReady && (
-        <div className="h-[300px] md:h-[500px] mb-4 relative z-0">
+      {mapReady && (
+        <div className="h-[500px] relative overflow-hidden rounded-lg shadow-lg mb-4">
           <MapContainer
             center={[32.7299, -97.1135]}
             zoom={16}
-            style={{ height: "100%", width: "100%" }}
-            zIndex={0}
+            className="h-full w-full"
+            whenReady={() => {
+              window.dispatchEvent(new Event('resize'));
+            }}
           >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -226,8 +231,8 @@ const Directions = () => {
         </div>
       )}
 
-{directions.length > 0 && (
-        <div className="bg-white p-4 rounded-lg shadow-md mt-4 mb-8"> {/* Added mb-8 for extra bottom margin */}
+      {directions.length > 0 && (
+        <div className="bg-white p-4 rounded-lg shadow-md mt-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
             <h2 className="text-xl font-bold mb-2 md:mb-0">Directions:</h2>
             <div className="flex space-x-2">
