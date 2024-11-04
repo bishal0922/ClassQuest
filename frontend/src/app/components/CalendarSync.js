@@ -1,34 +1,45 @@
 "use client";
-import React, { useState } from 'react';
-import { 
-  Calendar, X, AlertCircle, Check, Clock, MapPin, 
-  RefreshCw, CircleDot, Circle, Repeat, BookOpen,
-  FileSpreadsheet, ClipboardList, FileText, Beaker
-} from 'lucide-react';
-import { analyzeEventType, EVENT_TYPES } from './utility/calendarImportService';
+import React, { useState } from "react";
+import {
+  Calendar,
+  X,
+  AlertCircle,
+  Check,
+  Clock,
+  MapPin,
+  RefreshCw,
+  CircleDot,
+  Circle,
+  Repeat,
+  BookOpen,
+  FileSpreadsheet,
+  ClipboardList,
+  FileText,
+  Beaker,
+} from "lucide-react";
+import { analyzeEventType, EVENT_TYPES } from "./utility/calendarImportService";
 
 const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
-  const [syncStatus, setSyncStatus] = useState('idle');
+  const [syncStatus, setSyncStatus] = useState("idle");
   const [detectedEvents, setDetectedEvents] = useState([]);
   const [selectedEvents, setSelectedEvents] = useState(new Set());
   const [error, setError] = useState(null);
   const [debugLog, setDebugLog] = useState([]);
-  const [importMode, setImportMode] = useState('all');
+  const [importMode, setImportMode] = useState("all");
   const [comparisonStatus, setComparisonStatus] = useState({
     new: 0,
     existing: 0,
-    updated: 0
+    updated: 0,
   });
 
- 
   const addDebugLog = (message) => {
     console.log(message);
-    setDebugLog(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
+    setDebugLog((prev) => [...prev, `${new Date().toISOString()}: ${message}`]);
   };
 
   const getEventIcon = (event) => {
-    const eventType = event.analysis?.type || 'other';
-    
+    const eventType = event.analysis?.type || "other";
+
     switch (eventType) {
       case EVENT_TYPES.CLASS:
         return <BookOpen className="h-4 w-4 text-blue-500" />;
@@ -46,28 +57,35 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
   };
 
   const parseRecurringDays = (recurringRule) => {
+    if (!recurringRule) return [];
+
     const days = {
-      'MO': 'Monday',
-      'TU': 'Tuesday',
-      'WE': 'Wednesday',
-      'TH': 'Thursday',
-      'FR': 'Friday'
+      MO: "Monday",
+      TU: "Tuesday",
+      WE: "Wednesday",
+      TH: "Thursday",
+      FR: "Friday",
     };
 
     const matchDays = recurringRule.match(/BYDAY=([A-Z,]+)/);
     if (matchDays) {
-      return matchDays[1].split(',').map(day => days[day]);
+      return matchDays[1]
+        .split(",")
+        .map((day) => days[day])
+        .filter(Boolean);
     }
     return [];
   };
 
   const processRecurringEvent = (event) => {
+    // If it's not a recurring event, return it as is
     if (!event.recurrence) {
       return [event];
     }
 
     const recurringRule = event.recurrence[0];
-    if (!recurringRule.includes('FREQ=WEEKLY')) {
+    // Only process weekly recurring events
+    if (!recurringRule || !recurringRule.includes("FREQ=WEEKLY")) {
       return [event];
     }
 
@@ -76,112 +94,187 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
       return [event];
     }
 
-    // Create an instance for each recurring day
-    return recurringDays.map(day => ({
-      ...event,
-      id: `${event.id}_${day}`,
-      dayOfWeek: day,
-      recurringPattern: `Every ${recurringDays.join(', ')}`,
-      isRecurring: true,
-      recurrenceGroupId: event.id
-    }));
+    // Create a separate instance for each recurring day
+    return recurringDays.map((day) => {
+      // Calculate the time for this specific day
+      const startDate = new Date(event.start.dateTime);
+      const endDate = new Date(event.end.dateTime);
+
+      return {
+        ...event,
+        id: `${event.id}_${day}`,
+        dayOfWeek: day,
+        recurringPattern: `Every ${day}`,
+        isRecurring: true,
+        recurrenceGroupId: event.id,
+        start: { ...event.start, dateTime: startDate.toISOString() },
+        end: { ...event.end, dateTime: endDate.toISOString() },
+      };
+    });
   };
 
   const compareWithExisting = (events) => {
+    // If no existing events, treat all as new
+    if (!existingEvents || existingEvents.length === 0) {
+      console.log("No existing events provided - treating all events as new");
+      return {
+        newEvents: events,
+        updatedEvents: [],
+        unchangedEvents: [],
+      };
+    }
+
+    console.log("Existing events:", existingEvents);
+    console.log("Calendar events to compare:", events);
+
     const newEvents = [];
     const updatedEvents = [];
     const unchangedEvents = [];
-  
-    events.forEach(event => {
-      // Create a unique identifier for comparison
-      // Using summary (title), day of week, and start time as the key
-      const eventKey = `${event.summary}_${event.dayOfWeek || new Date(event.start.dateTime).toLocaleDateString('en-US', { weekday: 'long' })}_${new Date(event.start.dateTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
-      
-      const existingEvent = existingEvents?.find(existing => {
-        const existingKey = `${existing.className}_${existing.dayOfWeek}_${existing.startTime}`;
-        return existingKey === eventKey;
+
+    events.forEach((event) => {
+      const eventStartTime = new Date(event.start.dateTime).toLocaleTimeString(
+        "en-US",
+        {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        }
+      );
+
+      const eventDay =
+        event.dayOfWeek ||
+        new Date(event.start.dateTime).toLocaleDateString("en-US", {
+          weekday: "long",
+        });
+
+      const eventTitle = event.summary.toLowerCase().trim();
+
+      console.log("\nComparing event:", {
+        title: eventTitle,
+        day: eventDay,
+        time: eventStartTime,
       });
-  
+
+      // Log all existing events for debugging
+      console.log(
+        "All existing events:",
+        existingEvents.map((e) => ({
+          title: e.className,
+          day: e.dayOfWeek,
+          time: e.startTime,
+        }))
+      );
+
+      const existingEvent = existingEvents.find((existing) => {
+        const titleMatch =
+          existing.className.toLowerCase().trim() === eventTitle;
+        const dayMatch = existing.dayOfWeek === eventDay;
+        const timeMatch = existing.startTime === eventStartTime;
+
+        console.log("Comparing with:", {
+          existing: {
+            title: existing.className,
+            day: existing.dayOfWeek,
+            time: existing.startTime,
+          },
+          matches: { titleMatch, dayMatch, timeMatch },
+        });
+
+        return titleMatch && dayMatch && timeMatch;
+      });
+
       if (!existingEvent) {
+        console.log("➡️ Adding as new event");
         newEvents.push(event);
       } else {
-        // Check if any details have changed
-        const hasChanges = 
-          event.location !== existingEvent.location ||
-          new Date(event.end.dateTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) !== existingEvent.endTime;
-  
+        const eventEndTime = new Date(event.end.dateTime).toLocaleTimeString(
+          "en-US",
+          {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          }
+        );
+
+        const hasChanges =
+          (event.location || "Not specified") !==
+            (existingEvent.location || "Not specified") ||
+          eventEndTime !== existingEvent.endTime;
+
         if (hasChanges) {
+          console.log("➡️ Adding as updated event");
           updatedEvents.push({
             ...event,
             existingDetails: existingEvent,
             changes: {
-              location: event.location !== existingEvent.location,
-              time: new Date(event.end.dateTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) !== existingEvent.endTime
-            }
+              location:
+                (event.location || "Not specified") !==
+                (existingEvent.location || "Not specified"),
+              time: eventEndTime !== existingEvent.endTime,
+            },
           });
         } else {
+          console.log("➡️ Adding as unchanged event");
           unchangedEvents.push(event);
         }
       }
     });
-  
-    return {
-      newEvents,
-      updatedEvents,
-      unchangedEvents
-    };
+
+    return { newEvents, updatedEvents, unchangedEvents };
   };
-
-
   const handleGoogleAuth = async () => {
     setError(null);
-    setSyncStatus('syncing');
+    setSyncStatus("syncing");
     setDebugLog([]);
 
     try {
-      addDebugLog('Starting calendar sync process');
-      
+      addDebugLog("Starting calendar sync process");
+
       const tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-        scope: 'https://www.googleapis.com/auth/calendar.readonly',
+        scope: "https://www.googleapis.com/auth/calendar.readonly",
         callback: async (tokenResponse) => {
-          addDebugLog('Received token response');
-          
+          addDebugLog("Received token response");
+
           if (tokenResponse.error) {
             addDebugLog(`Token error: ${tokenResponse.error}`);
-            setSyncStatus('error');
+            setSyncStatus("error");
             setError(`Authentication error: ${tokenResponse.error}`);
             return;
           }
 
           try {
-            addDebugLog('Fetching calendar events');
-            
+            addDebugLog("Fetching calendar events");
+
             const timeMin = new Date();
             const timeMax = new Date();
             timeMax.setMonth(timeMax.getMonth() + 4);
 
-            const baseUrl = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+            const baseUrl =
+              "https://www.googleapis.com/calendar/v3/calendars/primary/events";
             const params = new URLSearchParams({
               timeMin: timeMin.toISOString(),
               timeMax: timeMax.toISOString(),
-              maxResults: '2500',
-              showDeleted: 'false',
-              singleEvents: 'false',
-              orderBy: 'updated',
-              fields: 'items(id,summary,description,location,start,end,recurrence)'
+              maxResults: "2500",
+              showDeleted: "false",
+              singleEvents: "false", // Keep this false to get recurring event patterns
+              orderBy: "updated",
             });
 
             const response = await fetch(`${baseUrl}?${params.toString()}`, {
               headers: {
-                'Authorization': `Bearer ${tokenResponse.access_token}`,
-                'Accept': 'application/json',
+                Authorization: `Bearer ${tokenResponse.access_token}`,
+                Accept: "application/json",
               },
             });
 
             if (!response.ok) {
               const errorData = await response.json();
-              throw new Error(`Calendar API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+              throw new Error(
+                `Calendar API error: ${response.status} - ${
+                  errorData.error?.message || "Unknown error"
+                }`
+              );
             }
 
             const data = await response.json();
@@ -189,57 +282,81 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
 
             // Process all events, including recurring ones
             const processedEvents = [];
-            for (const event of (data.items || [])) {
+            const seenEvents = new Map(); // Track events by summary and time
+
+            for (const event of data.items || []) {
               if (event.start?.dateTime && event.end?.dateTime) {
                 const recurringInstances = processRecurringEvent(event);
-                recurringInstances.forEach(evt => {
-                  const eventAnalysis = analyzeEventType(evt);
-                  processedEvents.push({
-                    ...evt,
-                    analysis: eventAnalysis
-                  });
+                recurringInstances.forEach((evt) => {
+                  const eventKey = `${evt.summary}_${evt.dayOfWeek}_${new Date(
+                    evt.start.dateTime
+                  ).toLocaleTimeString()}`;
+
+                  // Only add if we haven't seen this exact event before
+                  if (!seenEvents.has(eventKey)) {
+                    seenEvents.set(eventKey, evt);
+                    const eventAnalysis = analyzeEventType(evt);
+                    processedEvents.push({
+                      ...evt,
+                      analysis: eventAnalysis,
+                    });
+                  }
                 });
               }
             }
 
-            // Sort by confidence score and apply comparison with existing events
-            const { newEvents, updatedEvents, unchangedEvents } = compareWithExisting(processedEvents);
-            
+            // Sort and apply comparison with existing events
+            const { newEvents, updatedEvents, unchangedEvents } =
+              compareWithExisting(processedEvents);
+
             setComparisonStatus({
               new: newEvents.length,
               updated: updatedEvents.length,
-              existing: unchangedEvents.length
+              existing: unchangedEvents.length,
             });
 
             // Combine and sort all events
-            const sortedEvents = [...newEvents, ...updatedEvents]
-              .sort((a, b) => {
-                const confidenceDiff = b.analysis.confidence - a.analysis.confidence;
+            const sortedEvents = [...newEvents, ...updatedEvents].sort(
+              (a, b) => {
+                // First sort by recurrence group
+                if (a.recurrenceGroupId && b.recurrenceGroupId) {
+                  if (a.recurrenceGroupId !== b.recurrenceGroupId) {
+                    return a.recurrenceGroupId.localeCompare(
+                      b.recurrenceGroupId
+                    );
+                  }
+                }
+                // Then by confidence
+                const confidenceDiff =
+                  b.analysis.confidence - a.analysis.confidence;
                 if (confidenceDiff !== 0) return confidenceDiff;
+                // Then by time
                 return new Date(a.start.dateTime) - new Date(b.start.dateTime);
-              });
+              }
+            );
 
             addDebugLog(`Processed ${sortedEvents.length} events`);
             setDetectedEvents(sortedEvents);
-            setSyncStatus('success');
+            setSyncStatus("success");
           } catch (error) {
             addDebugLog(`Error processing events: ${error.message}`);
-            setSyncStatus('error');
+            setSyncStatus("error");
             setError(error.message);
           }
         },
       });
 
-      addDebugLog('Requesting access token');
-      tokenClient.requestAccessToken({ prompt: 'consent' });
+      addDebugLog("Requesting access token");
+      tokenClient.requestAccessToken({ prompt: "consent" });
     } catch (error) {
       addDebugLog(`Initial error: ${error.message}`);
-      console.error('Calendar sync error:', error);
-      setSyncStatus('error');
-      setError(error.message || 'An error occurred while syncing with Google Calendar');
+      console.error("Calendar sync error:", error);
+      setSyncStatus("error");
+      setError(
+        error.message || "An error occurred while syncing with Google Calendar"
+      );
     }
   };
-
   const renderEventStatus = (event) => {
     if (event.existingDetails) {
       return (
@@ -252,6 +369,7 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
     }
     return null;
   };
+
   const formatConfidence = (confidence) => {
     if (confidence >= 90) return "Very likely a class";
     if (confidence >= 70) return "Probably a class";
@@ -259,30 +377,80 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
     return "Probably not a class";
   };
 
+  // Update checkbox handling
+  const handleEventSelection = (event, isSelected) => {
+    const newSelected = new Set(selectedEvents);
+
+    if (event.recurrenceGroupId) {
+      // Find all events in the same recurrence group
+      const groupEvents = detectedEvents.filter(
+        (e) => e.recurrenceGroupId === event.recurrenceGroupId
+      );
+
+      groupEvents.forEach((e) => {
+        if (isSelected) {
+          newSelected.add(e.id);
+        } else {
+          newSelected.delete(e.id);
+        }
+      });
+    } else {
+      if (isSelected) {
+        newSelected.add(event.id);
+      } else {
+        newSelected.delete(event.id);
+      }
+    }
+
+    setSelectedEvents(newSelected);
+  };
+  // Update the checkbox onChange handler in the render section
+  const renderEventCheckbox = (event) => (
+    <input
+      type="checkbox"
+      checked={selectedEvents.has(event.id)}
+      onChange={(e) => handleEventSelection(event, e.target.checked)}
+      className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+    />
+  );
+
   const handleImport = () => {
+    console.log(
+      "Selected events for import:",
+      detectedEvents.filter((event) => selectedEvents.has(event.id))
+    );
+
     const selectedEventsData = detectedEvents
       .filter((event) => selectedEvents.has(event.id))
-      .map((event) => ({
-        className: event.summary,
-        location: event.location || "Not specified",
-        startTime: new Date(event.start.dateTime).toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        }),
-        endTime: new Date(event.end.dateTime).toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        }),
-        dayOfWeek:
-          event.dayOfWeek ||
-          new Date(event.start.dateTime).toLocaleDateString("en-US", {
-            weekday: "long",
+      .map((event) => {
+        const mappedEvent = {
+          className: event.summary,
+          location: event.location || "Not specified",
+          startTime: new Date(event.start.dateTime).toLocaleTimeString(
+            "en-US",
+            {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            }
+          ),
+          endTime: new Date(event.end.dateTime).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
           }),
-        isImported: true,
-        recurrenceGroupId: event.recurrenceGroupId,
-      }));
+          dayOfWeek:
+            event.dayOfWeek ||
+            new Date(event.start.dateTime).toLocaleDateString("en-US", {
+              weekday: "long",
+            }),
+          isImported: true,
+          recurrenceGroupId: event.recurrenceGroupId,
+        };
+
+        console.log("Mapped event for import:", mappedEvent);
+        return mappedEvent;
+      });
 
     onEventsImported(selectedEventsData);
   };
@@ -388,7 +556,6 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
               </div>
             </div>
           </div>
-
           {/* Events List */}
           <div className="bg-white rounded-lg border border-gray-200">
             <div className="max-h-96 overflow-y-auto">
@@ -408,35 +575,9 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
                         <input
                           type="checkbox"
                           checked={selectedEvents.has(event.id)}
-                          onChange={(e) => {
-                            const newSelected = new Set(selectedEvents);
-                            if (e.target.checked) {
-                              newSelected.add(event.id);
-                              // If it's part of a recurring group, select all instances
-                              if (event.recurrenceGroupId) {
-                                detectedEvents
-                                  .filter(
-                                    (e) =>
-                                      e.recurrenceGroupId ===
-                                      event.recurrenceGroupId
-                                  )
-                                  .forEach((e) => newSelected.add(e.id));
-                              }
-                            } else {
-                              newSelected.delete(event.id);
-                              // If it's part of a recurring group, deselect all instances
-                              if (event.recurrenceGroupId) {
-                                detectedEvents
-                                  .filter(
-                                    (e) =>
-                                      e.recurrenceGroupId ===
-                                      event.recurrenceGroupId
-                                  )
-                                  .forEach((e) => newSelected.delete(e.id));
-                              }
-                            }
-                            setSelectedEvents(newSelected);
-                          }}
+                          onChange={(e) =>
+                            handleEventSelection(event, e.target.checked)
+                          }
                           className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                         />
                         <div className="ml-3 flex-1">
@@ -510,7 +651,6 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
                 ))}
             </div>
           </div>
-
           {/* Action Buttons */}
           <div className="mt-4 flex justify-end space-x-3">
             <button

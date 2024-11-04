@@ -1,52 +1,74 @@
 /**
  * This is the ScheduleForm component.
- * 
+ *
  * This component allows users to create and manage their class schedules.
  * Users can add new classes, update existing ones, and view their schedule for each day of the week.
- * 
- * The component uses React's useState hook to manage the state of the schedule, the active day, 
+ *
+ * The component uses React's useState hook to manage the state of the schedule, the active day,
  * the modal for adding or editing classes, and the details of the new or edited class.
- * 
+ *
  * The daysOfWeek array contains the days from Monday to Friday.
  * The hours array contains the hours from 01 to 12, and the minutes array contains the minutes in 15-minute intervals.
  * The buildings array lists the available buildings where classes can be held.
- * 
+ *
  * The addOrUpdateClass function is used to add a new class to the schedule or update an existing class.
  * It checks if an identical class already exists to avoid duplicates.
- * 
+ *
  * The component renders a form where users can input the class name, location, start time, and end time.
  * It also displays the schedule for each day and allows users to edit or delete classes.
- * 
+ *
  * The "use client" directive at the top indicates that this component should be rendered on the client side.
  */
 
-"use client"
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Plus, X, ChevronDown, ChevronUp, Clock, MapPin, Edit2, Calendar } from 'lucide-react';
-import { useAuth } from '../lib/useAuth';
-import { getUserSchedule, updateUserSchedule } from '../lib/userModel';
-import CalendarSync from './CalendarSync'; // Import the new component
+import React, { useState, useEffect } from "react";
+import {
+  Plus,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  MapPin,
+  Edit2,
+  Calendar,
+} from "lucide-react";
+import { useAuth } from "../lib/useAuth";
+import { getUserSchedule, updateUserSchedule } from "../lib/userModel";
+import CalendarSync from "./CalendarSync";
 
-const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-const minutes = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'));
+const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const hours = Array.from({ length: 12 }, (_, i) =>
+  (i + 1).toString().padStart(2, "0")
+);
+const minutes = Array.from({ length: 12 }, (_, i) =>
+  (i * 5).toString().padStart(2, "0")
+);
 
 const buildings = [
   "Nedderman Hall",
   "Commons",
   "Science Hall",
   "Woolf Hall",
-  "ERB"
+  "ERB",
 ];
 
 const ScheduleForm = () => {
   const [schedule, setSchedule] = useState({
-    Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: []
+    Monday: [],
+    Tuesday: [],
+    Wednesday: [],
+    Thursday: [],
+    Friday: [],
   });
   const [activeDay, setActiveDay] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newClass, setNewClass] = useState({ className: '', location: '', startTime: '', endTime: '' });
+  const [newClass, setNewClass] = useState({
+    className: "",
+    location: "",
+    startTime: "08:00 AM",
+    endTime: "09:00 AM",
+  });
   const [editingClass, setEditingClass] = useState(null);
   const [showCalendarSync, setShowCalendarSync] = useState(false);
   const { user } = useAuth();
@@ -57,43 +79,6 @@ const ScheduleForm = () => {
     }
   }, [user]);
 
-  const handleEventsImported = async (events) => {
-    const updatedSchedule = { ...schedule };
-    
-    events.forEach(event => {
-      const day = event.dayOfWeek;
-      if (updatedSchedule[day]) {
-        const isDuplicate = updatedSchedule[day].some(
-          existingClass => 
-            existingClass.className === event.className &&
-            existingClass.startTime === event.startTime
-        );
-  
-        if (!isDuplicate) {
-          updatedSchedule[day].push({
-            className: event.className,
-            location: event.location,
-            startTime: event.startTime,
-            endTime: event.endTime,
-            isImported: true
-          });
-          // Sort by start time
-          updatedSchedule[day].sort((a, b) => {
-            const timeA = new Date(`1970/01/01 ${a.startTime}`).getTime();
-            const timeB = new Date(`1970/01/01 ${b.startTime}`).getTime();
-            return timeA - timeB;
-          });
-        }
-      }
-    });
-  
-    setSchedule(updatedSchedule);
-    if (user) {
-      await updateUserSchedule(user.uid, updatedSchedule);
-    }
-    setShowCalendarSync(false);
-  };
-
   const fetchUserSchedule = async () => {
     if (user) {
       const userSchedule = await getUserSchedule(user.uid);
@@ -103,58 +88,197 @@ const ScheduleForm = () => {
     }
   };
 
+  const handleEventsImported = async (events) => {
+    const updatedSchedule = { ...schedule };
+
+    events.forEach((event) => {
+      const day = event.dayOfWeek;
+      if (updatedSchedule[day]) {
+        // First, remove any existing events that match the imported event's time slot
+        // or have the same class name at a different time
+        updatedSchedule[day] = updatedSchedule[day].filter(
+          (existingClass) =>
+            !(
+              existingClass.className === event.className ||
+              (existingClass.startTime === event.startTime &&
+                existingClass.endTime === event.endTime)
+            )
+        );
+
+        // Add the new/updated event
+        updatedSchedule[day].push({
+          className: event.className,
+          location: event.location,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          isImported: true,
+        });
+
+        // Sort by start time
+        updatedSchedule[day].sort((a, b) => {
+          const timeA = new Date(`1970/01/01 ${a.startTime}`).getTime();
+          const timeB = new Date(`1970/01/01 ${b.startTime}`).getTime();
+          return timeA - timeB;
+        });
+      }
+    });
+
+    // Update both the schedule state and the database
+    setSchedule(updatedSchedule);
+    if (user) {
+      await updateUserSchedule(user.uid, updatedSchedule);
+    }
+    setShowCalendarSync(false);
+
+    // Force a refresh of the accordion view
+    if (activeDay) {
+      const currentDay = activeDay;
+      setActiveDay(null);
+      setTimeout(() => setActiveDay(currentDay), 0);
+    }
+  };
+
+  // Update addOrUpdateClass to handle the time conversion properly
   const addOrUpdateClass = async () => {
     const updatedSchedule = { ...schedule };
+
+    // Parse and format times
+    const formatClassTimes = (classData) => {
+      const [startTime, startPeriod] = classData.startTime.split(" ");
+      const [startHour, startMinute] = startTime.split(":");
+      const [endTime, endPeriod] = classData.endTime.split(" ");
+      const [endHour, endMinute] = endTime.split(":");
+
+      return {
+        ...classData,
+        startTime: convertTo24Hour(startHour, startMinute, startPeriod),
+        endTime: convertTo24Hour(endHour, endMinute, endPeriod),
+      };
+    };
+
     if (editingClass !== null) {
-      updatedSchedule[activeDay][editingClass] = newClass;
-    } else {
-      const classExists = updatedSchedule[activeDay].some(
-        cls => 
-          cls.className === newClass.className &&
-          cls.location === newClass.location &&
-          cls.startTime === newClass.startTime &&
-          cls.endTime === newClass.endTime
+      updatedSchedule[activeDay] = updatedSchedule[activeDay].filter(
+        (_, index) => index !== editingClass
       );
-      
-      if (!classExists) {
-        updatedSchedule[activeDay].push(newClass);
-      }
     }
 
-    setSchedule(updatedSchedule);
+    const formattedClass = formatClassTimes(newClass);
+    updatedSchedule[activeDay].push(formattedClass);
 
+    // Sort classes by start time
+    updatedSchedule[activeDay].sort((a, b) => {
+      const timeA = new Date(`1970/01/01 ${a.startTime}`).getTime();
+      const timeB = new Date(`1970/01/01 ${b.startTime}`).getTime();
+      return timeA - timeB;
+    });
+
+    setSchedule(updatedSchedule);
     if (user) {
       await updateUserSchedule(user.uid, updatedSchedule);
     }
 
     setIsModalOpen(false);
-    setNewClass({ className: '', location: '', startTime: '08:00 AM', endTime: '09:00 AM' });
+    setNewClass({
+      className: "",
+      location: "",
+      startTime: "08:00 AM",
+      endTime: "09:00 AM",
+    });
     setEditingClass(null);
   };
 
   const removeClass = async (day, index) => {
     const updatedSchedule = { ...schedule };
     updatedSchedule[day] = updatedSchedule[day].filter((_, i) => i !== index);
-    setSchedule(updatedSchedule);
 
+    // Update state and database
+    setSchedule(updatedSchedule);
     if (user) {
       await updateUserSchedule(user.uid, updatedSchedule);
     }
+
+    // Force a refresh of the view
+    const currentDay = activeDay;
+    setActiveDay(null);
+    setTimeout(() => setActiveDay(currentDay), 0);
   };
 
   const editClass = (day, index) => {
+    const classToEdit = schedule[day][index];
+
+    // Parse the time string to get the correct hour in 12-hour format
+    const parseTimeFor12Hour = (timeStr) => {
+      const [time, period] = timeStr.split(" ");
+      let [hours, minutes] = time.split(":").map(Number);
+
+      // Convert from 24-hour to 12-hour format
+      if (period === "PM" && hours > 12) {
+        hours -= 12;
+      }
+      if (period === "AM" && hours === 0) {
+        hours = 12;
+      }
+
+      return {
+        hour: hours.toString().padStart(2, "0"),
+        minute: minutes.toString().padStart(2, "0"),
+        period,
+      };
+    };
+
+    const startTime = parseTimeFor12Hour(classToEdit.startTime);
+    const endTime = parseTimeFor12Hour(classToEdit.endTime);
+
+    const editedClass = {
+      ...classToEdit,
+      startTime: `${startTime.hour}:${startTime.minute} ${startTime.period}`,
+      endTime: `${endTime.hour}:${endTime.minute} ${endTime.period}`,
+    };
+
+    console.log("Editing class:", {
+      original: classToEdit,
+      parsed: editedClass,
+    });
+
     setActiveDay(day);
-    setNewClass(schedule[day][index]);
+    setNewClass(editedClass);
     setEditingClass(index);
     setIsModalOpen(true);
   };
 
+  // Add a helper function to convert back to 24-hour format when saving
+  const convertTo24Hour = (hour, minute, period) => {
+    hour = parseInt(hour);
+    minute = parseInt(minute);
+
+    if (period === "PM" && hour !== 12) {
+      hour += 12;
+    }
+    if (period === "AM" && hour === 12) {
+      hour = 0;
+    }
+
+    return `${hour.toString().padStart(2, "0")}:${minute
+      .toString()
+      .padStart(2, "0")} ${period}`;
+  };
+
+  const formatTimeForDisplay = (hour, minute, period) => {
+    hour = parseInt(hour);
+    if (period === "PM" && hour !== 12) {
+      hour += 12;
+    } else if (period === "AM" && hour === 12) {
+      hour = 0;
+    }
+    return `${hour.toString().padStart(2, "0")}:${minute} ${period}`;
+  };
+
   const getClassPositionStyle = (startTime, endTime) => {
     const timeToMinutes = (time) => {
-      const [timeStr, period] = time.split(' ');
-      let [hours, minutes] = timeStr.split(':').map(Number);
-      if (period === 'PM' && hours !== 12) hours += 12;
-      if (period === 'AM' && hours === 12) hours = 0;
+      const [timeStr, period] = time.split(" ");
+      let [hours, minutes] = timeStr.split(":").map(Number);
+      if (period === "PM" && hours !== 12) hours += 12;
+      if (period === "AM" && hours === 12) hours = 0;
       return hours * 60 + minutes;
     };
 
@@ -167,53 +291,73 @@ const ScheduleForm = () => {
     const top = ((startMinutes - dayStartMinutes) / totalDayMinutes) * 100;
     const height = ((endMinutes - startMinutes) / totalDayMinutes) * 100;
 
-    return { 
+    return {
       top: `${Math.max(0, Math.min(100, top))}%`,
-      height: `${Math.max(0, Math.min(100 - top, height))}%`
+      height: `${Math.max(0, Math.min(100 - top, height))}%`,
     };
   };
 
   const validateClassTimes = () => {
-    const [startTimeStr, startPeriod] = newClass.startTime.split(' ');
-    const [endTimeStr, endPeriod] = newClass.endTime.split(' ');
-    const [startHour, startMinute] = startTimeStr.split(':').map(Number);
-    const [endHour, endMinute] = endTimeStr.split(':').map(Number);
+    const [startTimeStr, startPeriod] = newClass.startTime.split(" ");
+    const [endTimeStr, endPeriod] = newClass.endTime.split(" ");
+    const [startHour, startMinute] = startTimeStr.split(":").map(Number);
+    const [endHour, endMinute] = endTimeStr.split(":").map(Number);
 
     let start = startHour * 60 + startMinute;
     let end = endHour * 60 + endMinute;
 
-    if (startPeriod === 'PM' && startHour !== 12) start += 12 * 60;
-    if (endPeriod === 'PM' && endHour !== 12) end += 12 * 60;
-    if (startPeriod === 'AM' && startHour === 12) start -= 12 * 60;
-    if (endPeriod === 'AM' && endHour === 12) end -= 12 * 60;
+    if (startPeriod === "PM" && startHour !== 12) start += 12 * 60;
+    if (endPeriod === "PM" && endHour !== 12) end += 12 * 60;
+    if (startPeriod === "AM" && startHour === 12) start -= 12 * 60;
+    if (endPeriod === "AM" && endHour === 12) end -= 12 * 60;
 
     return start < end;
   };
 
+  // Update the renderTimeSelector function
   const renderTimeSelector = (type) => {
-    const [hour, minute, period] = newClass[type].split(/[:\s]/);
+    const timeValue = newClass[type];
+    const [time, period] = timeValue.split(" ");
+    const [hour, minute] = time.split(":");
 
     const updateTime = (field, value) => {
-      let updatedHour = field === 'hour' ? value : hour;
-      let updatedMinute = field === 'minute' ? value : minute;
-      let updatedPeriod = field === 'period' ? value : period;
+      let updatedHour = field === "hour" ? value : hour;
+      let updatedMinute = field === "minute" ? value : minute;
+      let updatedPeriod = field === "period" ? value : period;
+
       const formattedTime = `${updatedHour}:${updatedMinute} ${updatedPeriod}`;
       setNewClass({ ...newClass, [type]: formattedTime });
     };
 
     return (
       <div className="flex space-x-2">
-        <select value={hour} onChange={(e) => updateTime('hour', e.target.value)} className="w-1/3 p-2 border rounded">
+        <select
+          value={hour}
+          onChange={(e) => updateTime("hour", e.target.value)}
+          className="w-1/3 p-2 border rounded"
+        >
           {hours.map((h) => (
-            <option key={h} value={h}>{h}</option>
+            <option key={h} value={h}>
+              {h}
+            </option>
           ))}
         </select>
-        <select value={minute} onChange={(e) => updateTime('minute', e.target.value)} className="w-1/3 p-2 border rounded">
+        <select
+          value={minute}
+          onChange={(e) => updateTime("minute", e.target.value)}
+          className="w-1/3 p-2 border rounded"
+        >
           {minutes.map((m) => (
-            <option key={m} value={m}>{m}</option>
+            <option key={m} value={m}>
+              {m}
+            </option>
           ))}
         </select>
-        <select value={period} onChange={(e) => updateTime('period', e.target.value)} className="w-1/3 p-2 border rounded">
+        <select
+          value={period}
+          onChange={(e) => updateTime("period", e.target.value)}
+          className="w-1/3 p-2 border rounded"
+        >
           <option value="AM">AM</option>
           <option value="PM">PM</option>
         </select>
@@ -221,20 +365,30 @@ const ScheduleForm = () => {
     );
   };
 
+  const getCurrentScheduleEvents = () => {
+    return Object.entries(schedule).flatMap(([day, classes]) =>
+      classes.map((cls) => ({
+        ...cls,
+        dayOfWeek: day,
+      }))
+    );
+  };
+
   return (
     <div className="max-w-full mx-auto p-2 sm:p-6 bg-gray-50 rounded-xl shadow-lg">
+      <div className="flex justify-between items-center mb-6">
+        <button
+          onClick={() => setShowCalendarSync(true)}
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+        >
+          <Calendar className="mr-2 -ml-1 h-5 w-5" />
+          Import from Calendar
+        </button>
+      </div>
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
+        Your Weekly Schedule
+      </h2>
 
-<div className="flex justify-between items-center mb-6">
-  <button
-    onClick={() => setShowCalendarSync(true)}
-    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-  >
-    <Calendar className="mr-2 -ml-1 h-5 w-5" />
-    Import from Calendar
-  </button>
-</div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Your Weekly Schedule</h2>
-      
       {/* Mobile Timetable View */}
       <div className="sm:hidden">
         <div className="overflow-x-auto">
@@ -243,9 +397,12 @@ const ScheduleForm = () => {
               <div className="bg-gray-100 p-1">
                 <div className="h-8"></div>
                 {Array.from({ length: 15 }, (_, i) => i + 8).map((hour) => (
-                  <div key={hour} className="h-8 border-t border-gray-200 text-xs text-gray-500 relative">
+                  <div
+                    key={hour}
+                    className="h-8 border-t border-gray-200 text-xs text-gray-500 relative"
+                  >
                     <span className="absolute -top-3 left-0 text-[10px]">
-                      {`${hour % 12 || 12}${hour < 12 ? 'A' : 'P'}`}
+                      {`${hour % 12 || 12}${hour < 12 ? "A" : "P"}`}
                     </span>
                   </div>
                 ))}
@@ -259,13 +416,20 @@ const ScheduleForm = () => {
                     {schedule[day].map((cls, index) => (
                       <div
                         key={index}
-                        style={getClassPositionStyle(cls.startTime, cls.endTime)}
+                        style={getClassPositionStyle(
+                          cls.startTime,
+                          cls.endTime
+                        )}
                         className="absolute inset-x-0 bg-indigo-200 border-l-4 border-indigo-500 p-1 overflow-hidden cursor-pointer hover:bg-indigo-300 transition-colors"
                         onClick={() => editClass(day, index)}
                       >
-                        <p className="text-[8px] font-semibold truncate">{cls.className}</p>
+                        <p className="text-[8px] font-semibold truncate">
+                          {cls.className}
+                        </p>
                         <p className="text-[6px] truncate">{cls.location}</p>
-                        <p className="text-[6px] truncate">{`${cls.startTime.split(' ')[0]} - ${cls.endTime.split(' ')[0]}`}</p>
+                        <p className="text-[6px] truncate">{`${
+                          cls.startTime.split(" ")[0]
+                        } - ${cls.endTime.split(" ")[0]}`}</p>
                       </div>
                     ))}
                   </div>
@@ -282,16 +446,21 @@ const ScheduleForm = () => {
           <div className="bg-gray-100 p-2">
             <div className="h-12"></div>
             {Array.from({ length: 15 }, (_, i) => i + 8).map((hour) => (
-              <div key={hour} className="h-12 border-t border-gray-200 text-xs text-gray-500 relative">
+              <div
+                key={hour}
+                className="h-12 border-t border-gray-200 text-xs text-gray-500 relative"
+              >
                 <span className="absolute -top-3 left-0">
-                  {`${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`}
+                  {`${hour % 12 || 12}:00 ${hour < 12 ? "AM" : "PM"}`}
                 </span>
               </div>
             ))}
           </div>
           {daysOfWeek.map((day) => (
             <div key={day} className="relative">
-              <div className="h-12 bg-indigo-100 font-semibold text-center py-3">{day}</div>
+              <div className="h-12 bg-indigo-100 font-semibold text-center py-3">
+                {day}
+              </div>
               <div className="h-[720px] relative">
                 {schedule[day].map((cls, index) => (
                   <div
@@ -300,7 +469,9 @@ const ScheduleForm = () => {
                     className="absolute inset-x-0 bg-indigo-200 border-l-4 border-indigo-500 p-1 overflow-hidden cursor-pointer hover:bg-indigo-300 transition-colors"
                     onClick={() => editClass(day, index)}
                   >
-                    <p className="text-xs font-semibold truncate">{cls.className}</p>
+                    <p className="text-xs font-semibold truncate">
+                      {cls.className}
+                    </p>
                     <p className="text-xs truncate">{cls.location}</p>
                     <p className="text-xs truncate">{`${cls.startTime} - ${cls.endTime}`}</p>
                   </div>
@@ -310,7 +481,6 @@ const ScheduleForm = () => {
           ))}
         </div>
       </div>
-
       {/* Day Accordions */}
       <div className="space-y-2">
         {daysOfWeek.map((day) => (
@@ -320,26 +490,49 @@ const ScheduleForm = () => {
               className="w-full flex justify-between items-center p-3 sm:p-4 text-left hover:bg-gray-50"
             >
               <span className="text-sm sm:text-lg font-semibold">{day}</span>
-              {activeDay === day ? <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" /> : <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />}
+              {activeDay === day ? (
+                <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
+              ) : (
+                <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
+              )}
             </button>
             {activeDay === day && (
               <div className="p-3 sm:p-4 border-t border-gray-200">
                 {schedule[day].map((cls, index) => (
-                  <div key={index} className="flex justify-between items-center mb-2 p-2 bg-gray-50 rounded hover:bg-gray-100">
+                  <div
+                    key={index}
+                    className="flex justify-between items-center mb-2 p-2 bg-gray-50 rounded hover:bg-gray-100"
+                  >
                     <div>
-                      <p className="font-semibold text-sm sm:text-base">{cls.className}</p>
-                      <p className="text-xs sm:text-sm text-gray-600 flex items-center">
-                        <MapPin className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> {cls.location}
+                      <p className="font-semibold text-sm sm:text-base">
+                        {cls.className}
                       </p>
                       <p className="text-xs sm:text-sm text-gray-600 flex items-center">
-                        <Clock className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> {`${cls.startTime} - ${cls.endTime}`}
+                        <MapPin className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />{" "}
+                        {cls.location}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-600 flex items-center">
+                        <Clock className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />{" "}
+                        {`${cls.startTime} - ${cls.endTime}`}
                       </p>
                     </div>
                     <div className="flex items-center">
-                      <button onClick={() => editClass(day, index)} className="text-blue-500 hover:text-blue-700 mr-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          editClass(day, index);
+                        }}
+                        className="text-blue-500 hover:text-blue-700 mr-2"
+                      >
                         <Edit2 className="h-4 w-4 sm:h-5 sm:w-5" />
                       </button>
-                      <button onClick={() => removeClass(day, index)} className="text-red-500 hover:text-red-700">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeClass(day, index);
+                        }}
+                        className="text-red-500 hover:text-red-700"
+                      >
                         <X className="h-4 w-4 sm:h-5 sm:w-5" />
                       </button>
                     </div>
@@ -350,7 +543,12 @@ const ScheduleForm = () => {
                     setIsModalOpen(true);
                     setActiveDay(day);
                     setEditingClass(null);
-                    setNewClass({ className: '', location: '', startTime: '08:00 AM', endTime: '09:00 AM' });
+                    setNewClass({
+                      className: "",
+                      location: "",
+                      startTime: "08:00 AM",
+                      endTime: "09:00 AM",
+                    });
                   }}
                   className="mt-2 flex items-center justify-center w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
@@ -367,62 +565,88 @@ const ScheduleForm = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">{editingClass !== null ? 'Edit' : 'Add'} Class for {activeDay}</h3>
+            <h3 className="text-xl font-semibold mb-4">
+              {editingClass !== null ? "Edit" : "Add"} Class for {activeDay}
+            </h3>
             <input
               type="text"
               placeholder="Class Name"
               value={newClass.className}
-              onChange={(e) => setNewClass({ ...newClass, className: e.target.value })}
+              onChange={(e) =>
+                setNewClass({ ...newClass, className: e.target.value })
+              }
               className="w-full mb-2 p-2 border rounded"
             />
             <select
               value={newClass.location}
-              onChange={(e) => setNewClass({ ...newClass, location: e.target.value })}
+              onChange={(e) =>
+                setNewClass({ ...newClass, location: e.target.value })
+              }
               className="w-full mb-2 p-2 border rounded"
             >
               <option value="">Select Building</option>
               {buildings.map((building) => (
-                <option key={building} value={building}>{building}</option>
+                <option key={building} value={building}>
+                  {building}
+                </option>
               ))}
             </select>
             <div className="mb-2">
-              <label className="block text-sm font-medium text-gray-700">Start Time</label>
-              {renderTimeSelector('startTime')}
+              <label className="block text-sm font-medium text-gray-700">
+                Start Time
+              </label>
+              {renderTimeSelector("startTime")}
             </div>
             <div className="mb-2">
-              <label className="block text-sm font-medium text-gray-700">End Time</label>
-              {renderTimeSelector('endTime')}
+              <label className="block text-sm font-medium text-gray-700">
+                End Time
+              </label>
+              {renderTimeSelector("endTime")}
             </div>
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="mr-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-              >
-                Cancel
-              </button>
+            <div className="flex justify-between mt-4">
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                {editingClass !== null && (
+                  <button
+                    onClick={() => {
+                      removeClass(activeDay, editingClass);
+                      setIsModalOpen(false);
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
               <button
                 onClick={addOrUpdateClass}
                 disabled={!validateClassTimes()}
                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {editingClass !== null ? 'Update' : 'Add'} Class
+                {editingClass !== null ? "Update" : "Add"} Class
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add this modal near the end of your return statement */}
-{showCalendarSync && (
-  <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-    <div className="bg-white rounded-lg max-w-2xl w-full mx-4">
-      <CalendarSync 
-        onEventsImported={handleEventsImported}
-        onClose={() => setShowCalendarSync(false)}
-      />
-    </div>
-  </div>
-)}
+      {/* Calendar Sync Modal */}
+      {showCalendarSync && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4">
+            <CalendarSync
+              onEventsImported={handleEventsImported}
+              onClose={() => setShowCalendarSync(false)}
+              existingEvents={getCurrentScheduleEvents()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
