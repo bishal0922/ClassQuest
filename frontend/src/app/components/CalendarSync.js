@@ -16,8 +16,7 @@ import {
   ClipboardList,
   FileText,
   Beaker,
-  ArrowRight,
-  ChevronRight, 
+  ChevronRight,
   Mail
 } from "lucide-react";
 import { analyzeEventType, EVENT_TYPES } from "./utility/calendarImportService";
@@ -472,102 +471,106 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
     onEventsImported(selectedEventsData);
   };
 
+
   return (
     <div className="bg-white rounded-lg overflow-hidden max-h-[90vh] flex flex-col">
-    <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold flex items-center">
-          <Calendar className="mr-2 h-5 w-5" />
-          Import from Google Calendar
-        </h3>
-        <button
-          onClick={onClose}
-          className="text-white/80 hover:text-white transition-colors"
-        >
-          <X className="h-6 w-6" />
-        </button>
+      <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white">
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-semibold flex items-center">
+            <Calendar className="mr-2 h-5 w-5" />
+            Import from Google Calendar
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-white/80 hover:text-white transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+        <p className="mt-1 text-sm text-white/80">
+          Sync your class schedule and academic events
+        </p>
       </div>
-      <p className="mt-1 text-sm text-white/80">
-        Sync your class schedule and academic events
-      </p>
-    </div>
 
-    {error && (
-      <div className="m-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
-        <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
-        <p className="text-sm text-red-600">{error}</p>
-      </div>
-    )}
-
-    <div className="p-6 flex-1 overflow-y-auto">
-      {syncStatus === "idle" && (
-        <div className="text-center py-8">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
-            <Calendar className="h-8 w-8 text-indigo-600" />
-          </div>
-          <div className="max-w-sm mx-auto">
-            <h4 className="text-lg font-medium text-gray-900 mb-2">
-              Calendar Sync Access
-            </h4>
-            <p className="text-sm text-gray-500 mb-6">
-              This feature is currently in testing.<br></br> Only certain Google Accounts are permitted <br></br><b>Please verify your access status below or request access from someone in Team 3.</b><br></br>
-            </p>
-            <div className="space-y-3">
-              <button
-                onClick={handleGoogleAuth}
-                className="w-full inline-flex items-center justify-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                <div className="flex items-center">
-                  <div className="bg-white p-1 rounded mr-3">
-                    <svg className="h-5 w-5" viewBox="0 0 24 24">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                    </svg>
-                  </div>
-                  Connect Google Calendar
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </div>
-              </button>
-              <a
-                href="mailto:classquestdevs@gmail.com?subject=ClassQuest Calendar Sync Access Request&body=Hello, I would like to request access to the Google Calendar Sync feature."
-                className="w-full inline-flex items-center justify-center px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                <Mail className="mr-2 h-4 w-4" />
-                Request Access
-              </a>
-            </div>
-          </div>
+      {error && (
+        <div className="m-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
+          <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+          <p className="text-sm text-red-600">{error}</p>
         </div>
       )}
+
+      <div className="p-6 flex-1 overflow-y-auto">
+        {syncStatus === "idle" && (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
+              <Calendar className="h-8 w-8 text-indigo-600" />
+            </div>
+            <div className="max-w-sm mx-auto">
+              <h4 className="text-lg font-medium text-gray-900 mb-2">
+                Calendar Sync Access
+              </h4>
+              <p className="text-sm text-gray-500 mb-6">
+                This feature is currently in testing.<br />
+                Only certain Google Accounts are permitted<br />
+                <b>Please verify your access status below or request access from someone in Team 3.</b><br />
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={handleGoogleAuth}
+                  className="w-full inline-flex items-center justify-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <div className="bg-white p-1 rounded mr-3">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                      </svg>
+                    </div>
+                    Connect Google Calendar
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </div>
+                </button>
+                <a
+                  href="mailto:classquestdevs@gmail.com?subject=ClassQuest Calendar Sync Access Request&body=Hello, I would like to request access to the Google Calendar Sync feature."
+                  className="w-full inline-flex items-center justify-center px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  <Mail className="mr-2 h-4 w-4" />
+                  Request Access
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         {syncStatus === "syncing" && (
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1f3a2c] mx-auto"></div>
-            <p className="mt-2 text-[#6c645c]">Analyzing your calendar...</p>
-            <div className="mt-4 text-left text-xs text-[#6c645c] max-h-32 overflow-y-auto">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+            <p className="mt-2 text-gray-500">Analyzing your calendar...</p>
+            <div className="mt-4 text-left text-xs text-gray-400 max-h-32 overflow-y-auto">
               {debugLog.map((log, index) => (
                 <div key={index}>{log}</div>
               ))}
             </div>
           </div>
         )}
-  
+
         {syncStatus === "success" && detectedEvents.length > 0 && (
           <div>
             {/* Import Options */}
-            <div className="bg-[#e8ece7] p-4 rounded-lg shadow-sm mb-4 border border-[#d1c9b5]">
+            <div className="bg-white p-4 rounded-lg shadow-sm mb-4 border border-gray-200">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h4 className="font-medium text-[#1f3a2c]">Import Options</h4>
+                  <h4 className="font-medium text-gray-900">Import Options</h4>
                   <div className="flex space-x-4 text-sm mt-1">
-                    <span className="text-[#728b6b] flex items-center">
+                    <span className="text-green-600 flex items-center">
                       <CircleDot className="h-3 w-3 mr-1" /> New: {comparisonStatus.new}
                     </span>
-                    <span className="text-[#6c6e54] flex items-center">
+                    <span className="text-amber-600 flex items-center">
                       <RefreshCw className="h-3 w-3 mr-1" /> Updates: {comparisonStatus.updated}
                     </span>
-                    <span className="text-[#6c645c] flex items-center">
+                    <span className="text-gray-600 flex items-center">
                       <Circle className="h-3 w-3 mr-1" /> Unchanged: {comparisonStatus.existing}
                     </span>
                   </div>
@@ -579,8 +582,8 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
                       onClick={() => setImportMode(mode)}
                       className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors
                         ${importMode === mode
-                          ? "bg-[#1f3a2c] text-[#e8ece7]"
-                          : "bg-[#e8ece7] text-[#1f3a2c] hover:bg-[#d1c9b5]"
+                          ? "bg-indigo-100 text-indigo-700"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                     >
                       {mode.charAt(0).toUpperCase() + mode.slice(1)} {mode === "all" ? "Events" : "Only"}
@@ -589,9 +592,9 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
                 </div>
               </div>
             </div>
-  
+
             {/* Events List */}
-            <div className="bg-white rounded-lg border border-[#d1c9b5]">
+            <div className="bg-white rounded-lg border border-gray-200">
               <div className="max-h-96 overflow-y-auto">
                 {detectedEvents
                   .filter((event) => {
@@ -600,35 +603,77 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
                     return true;
                   })
                   .map((event) => (
-                    <div key={event.id} className="border-b border-[#d1c9b5] last:border-0">
-                      {/* Keep the existing event item content */}
-                      <div className="p-4 hover:bg-[#e8ece7] transition-colors">
+                    <div key={event.id} className="border-b border-gray-200 last:border-0">
+                      <div className="p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex items-start">
                           <input
                             type="checkbox"
                             checked={selectedEvents.has(event.id)}
                             onChange={(e) => handleEventSelection(event, e.target.checked)}
-                            className="mt-1 h-4 w-4 text-[#1f3a2c] focus:ring-[#728b6b] border-[#d1c9b5] rounded"
+                            className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                           />
-                          {/* Keep the existing event details structure */}
                           <div className="ml-3 flex-1">
-                            {/* ... rest of the event item content remains the same ... */}
                             <div className="flex items-center">
                               {getEventIcon(event)}
-                              <p className="ml-2 font-medium text-[#1f3a2c]">
+                              <p className="ml-2 font-medium text-gray-900">
                                 {event.summary}
                               </p>
                               {event.existingDetails ? (
-                                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-[#e5edd3] text-[#6c6e54] rounded-full">
+                                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
                                   Update Available
                                 </span>
                               ) : (
-                                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-[#e8ece7] text-[#728b6b] rounded-full">
+                                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded-full">
                                   New
                                 </span>
                               )}
                             </div>
-                            {/* Keep the rest of the event details structure */}
+
+                            <div className="mt-1 text-sm text-gray-500 space-y-1">
+                              <p className="flex items-center">
+                                <Clock className="h-4 w-4 mr-1" />
+                                {new Date(event.start.dateTime).toLocaleTimeString([], {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })}
+                                {event.dayOfWeek && (
+                                  <span className="ml-2 text-indigo-600 font-medium">
+                                    ({event.dayOfWeek})
+                                  </span>
+                                )}
+                              </p>
+                              {event.location && (
+                                <p className="flex items-center">
+                                  <MapPin className="h-4 w-4 mr-1" />
+                                  {event.location}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Event Type and Status Badges */}
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {event.isRecurring && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                  <Repeat className="h-3 w-3 mr-1" />
+                                  Recurring
+                                </span>
+                              )}
+                              {event.recurringPattern && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                  {event.recurringPattern}
+                                </span>
+                              )}
+                              {event.analysis?.type && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  {event.analysis.type.charAt(0).toUpperCase() +
+                                    event.analysis.type.slice(1)}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Changes Section */}
+                            {renderEventStatus(event)}
                           </div>
                         </div>
                       </div>
@@ -636,28 +681,28 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
                   ))}
               </div>
             </div>
-  
+
             {/* Action Buttons */}
             <div className="mt-4 flex justify-end space-x-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 border border-[#d1c9b5] rounded-md text-sm font-medium text-[#6c645c] hover:bg-[#e8ece7] transition-colors"
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleImport}
                 disabled={selectedEvents.size === 0}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-[#e8ece7] bg-[#1f3a2c] hover:bg-[#1f3a2c]/90 disabled:bg-[#9d9c95] disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               >
                 Import Selected ({selectedEvents.size})
               </button>
             </div>
           </div>
         )}
-  
+
         {syncStatus === "success" && detectedEvents.length === 0 && (
-          <div className="text-center text-[#6c645c]">
+          <div className="text-center text-gray-500">
             No events found in your calendar.
           </div>
         )}
