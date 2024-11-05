@@ -49,11 +49,16 @@ const eventTypeConfig = {
 };
 
 const EventTypeSelector = ({ selectedType, onSelect }) => {
+  // Ensure selectedType is valid, default to CLASS if not
+  const validType = Object.values(EVENT_TYPES).includes(selectedType) 
+    ? selectedType 
+    : EVENT_TYPES.CLASS;
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
       {Object.entries(eventTypeConfig).map(([type, config]) => {
         const Icon = config.icon;
-        const isSelected = selectedType === type;
+        const isSelected = validType === type;
         return (
           <button
             key={type}

@@ -1,10 +1,25 @@
 // src/app/components/schedule/AddEditClassModal.js
-import React from 'react';
+import React, {useEffect} from 'react';
 import { X } from 'lucide-react';
 import { buildings, validateClassTimes } from './scheduleUtils';
 import TimeSelector from './TimeSelector';
 import { EVENT_TYPES } from '../utility/calendarImportService';
 import EventTypeSelector, { getEventTypeConfig } from './EventTypeSelector';
+
+const parseTimeString = (timeStr) => {
+  const [time, period] = timeStr.split(' ');
+  const [hour, minute] = time.split(':').map(str => parseInt(str, 10));
+  return { hour, minute, period };
+};
+
+const formatTimeForInput = (timeStr) => {
+  const { hour, minute, period } = parseTimeString(timeStr);
+  return {
+    hour: hour.toString().padStart(2, '0'),
+    minute: minute.toString().padStart(2, '0'),
+    period
+  };
+};
 
 const AddEditClassModal = ({
   isOpen,
@@ -15,9 +30,10 @@ const AddEditClassModal = ({
   onDelete,
   onSave,
 }) => {
+
   if (!isOpen) return null;
 
-  const eventConfig = getEventTypeConfig(newEvent.type);
+  const eventConfig = getEventTypeConfig(newEvent.type || EVENT_TYPES.CLASS);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

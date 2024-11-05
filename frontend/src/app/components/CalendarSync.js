@@ -208,7 +208,8 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
     onEventsImported(selectedEventsData);
   };
 
-  const mapEventToScheduleFormat = (event) => ({
+const mapEventToScheduleFormat = (event) => {
+  return {
     className: event.summary,
     location: event.location || "Not specified",
     startTime: new Date(event.start.dateTime).toLocaleTimeString("en-US", {
@@ -228,7 +229,9 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
       }),
     isImported: true,
     recurrenceGroupId: event.recurrenceGroupId,
-  });
+    eventType: event.analysis.type,
+  };
+};
 
   const filteredEvents = detectedEvents.filter((event) => {
     switch (importMode) {

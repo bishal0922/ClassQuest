@@ -1,3 +1,4 @@
+// src/app/utils/constants.js or wherever your EVENT_TYPES is defined
 export const EVENT_TYPES = {
     CLASS: 'class',
     EXAM: 'exam',
