@@ -26,6 +26,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, X, ChevronDown, ChevronUp, Clock, MapPin, Edit2 } from 'lucide-react';
 import { useAuth } from '../lib/useAuth';
 import { getUserSchedule, updateUserSchedule } from '../lib/userModel';
+import { EVENT_TYPES } from '../utils/constants';
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
@@ -67,30 +68,39 @@ const ScheduleForm = () => {
 
   const addOrUpdateClass = async () => {
     const updatedSchedule = { ...schedule };
+    const formattedClass = {
+      className: newEvent.title,
+      location: newEvent.location,
+      startTime: newEvent.startTime,
+      endTime: newEvent.endTime,
+      eventType: newEvent.type, // Make sure this is being saved
+      isImported: Boolean(editingClass !== null && schedule[activeDay][editingClass].isImported)
+    };
+  
     if (editingClass !== null) {
-      updatedSchedule[activeDay][editingClass] = newClass;
+      // When updating, preserve any existing fields we want to keep
+      updatedSchedule[activeDay][editingClass] = {
+        ...schedule[activeDay][editingClass],
+        ...formattedClass
+      };
     } else {
-      const classExists = updatedSchedule[activeDay].some(
-        cls => 
-          cls.className === newClass.className &&
-          cls.location === newClass.location &&
-          cls.startTime === newClass.startTime &&
-          cls.endTime === newClass.endTime
-      );
-      
-      if (!classExists) {
-        updatedSchedule[activeDay].push(newClass);
-      }
+      updatedSchedule[activeDay].push(formattedClass);
     }
-
+  
+  
     setSchedule(updatedSchedule);
-
     if (user) {
       await updateUserSchedule(user.uid, updatedSchedule);
     }
-
+  
     setIsModalOpen(false);
-    setNewClass({ className: '', location: '', startTime: '08:00 AM', endTime: '09:00 AM' });
+    setNewEvent({
+      type: EVENT_TYPES.CLASS,
+      title: "",
+      location: "",
+      startTime: "08:00 AM",
+      endTime: "09:00 AM",
+    });
     setEditingClass(null);
   };
 
@@ -105,10 +115,18 @@ const ScheduleForm = () => {
   };
 
   const editClass = (day, index) => {
+    const classToEdit = schedule[day][index];
     setActiveDay(day);
-    setNewClass(schedule[day][index]);
+    setNewEvent({
+      type: classToEdit.eventType || EVENT_TYPES.CLASS, // Make sure we're using eventType
+      title: classToEdit.className,
+      location: classToEdit.location,
+      startTime: classToEdit.startTime,
+      endTime: classToEdit.endTime,
+    });
     setEditingClass(index);
     setIsModalOpen(true);
+  
   };
 
   const getClassPositionStyle = (startTime, endTime) => {

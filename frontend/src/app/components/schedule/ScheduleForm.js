@@ -69,49 +69,44 @@ const ScheduleForm = () => {
 
   const handleEventsImported = async (events) => {
     const updatedSchedule = { ...schedule };
-
+  
     events.forEach((event) => {
       const day = event.dayOfWeek;
       if (updatedSchedule[day]) {
-    // src/app/components/schedule/ScheduleForm.js (continued)
-
-    updatedSchedule[day] = updatedSchedule[day].filter(
-      (existingClass) =>
-        !(
-          existingClass.className === event.className ||
-          (existingClass.startTime === event.startTime &&
-            existingClass.endTime === event.endTime)
-        )
-    );
-
-    updatedSchedule[day].push({
-      className: event.className,
-      location: event.location,
-      startTime: event.startTime,
-      endTime: event.endTime,
-      isImported: true,
+        // Filter out any existing events that match
+        updatedSchedule[day] = updatedSchedule[day].filter(
+          (existingClass) =>
+            !(
+              existingClass.className === event.className ||
+              (existingClass.startTime === event.startTime &&
+                existingClass.endTime === event.endTime)
+            )
+        );
+  
+        updatedSchedule[day].push({
+          className: event.className,
+          location: event.location,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          isImported: true,
+          eventType: event.eventType, // Make sure we're preserving the event type
+        });
+  
+        // Sort by time
+        updatedSchedule[day].sort((a, b) => {
+          const timeA = new Date(`1970/01/01 ${a.startTime}`).getTime();
+          const timeB = new Date(`1970/01/01 ${b.startTime}`).getTime();
+          return timeA - timeB;
+        });
+      }
     });
-
-    updatedSchedule[day].sort((a, b) => {
-      const timeA = new Date(`1970/01/01 ${a.startTime}`).getTime();
-      const timeB = new Date(`1970/01/01 ${b.startTime}`).getTime();
-      return timeA - timeB;
-    });
-  }
-});
-
-setSchedule(updatedSchedule);
-if (user) {
-  await updateUserSchedule(user.uid, updatedSchedule);
-}
-setShowCalendarSync(false);
-
-if (activeDay) {
-  const currentDay = activeDay;
-  setActiveDay(null);
-  setTimeout(() => setActiveDay(currentDay), 0);
-}
-};
+  
+    setSchedule(updatedSchedule);
+    if (user) {
+      await updateUserSchedule(user.uid, updatedSchedule);
+    }
+    setShowCalendarSync(false);
+  };
 
 const addOrUpdateClass = async () => {
 const updatedSchedule = { ...schedule };

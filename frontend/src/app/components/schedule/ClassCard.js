@@ -2,9 +2,10 @@
 import React from 'react';
 import { Edit2, X, MapPin, Clock } from 'lucide-react';
 import { getEventTypeConfig } from './EventTypeSelector';
+import { EVENT_TYPES } from '../utility/calendarImportService';
 
 const ClassCard = ({ classData, index, onEdit, onDelete }) => {
-  const eventConfig = getEventTypeConfig(classData.eventType || 'class');
+  const eventConfig = getEventTypeConfig(classData.eventType || EVENT_TYPES.CLASS);
   const Icon = eventConfig.icon;
 
   return (
