@@ -16,7 +16,8 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   onAuthStateChanged as _onAuthStateChanged, 
-  signOut as _signOut 
+  signOut as _signOut,
+  sendEmailVerification as _sendEmailVerification
 } from 'firebase/auth';
 import { createUser, getUserByFirebaseId } from '../userModel';
 
@@ -54,11 +55,17 @@ export async function signUp(email, password, displayName = '') {
     // Create Firebase user
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     
+    // Send verification email
+    await _sendEmailVerification(userCredential.user, {
+      url: process.env.NEXT_PUBLIC_VERIFICATION_REDIRECT_URL || 'http://localhost:3000/login',
+    });
+
     // Create MongoDB user document
     await createUser({
       firebaseId: userCredential.user.uid,
       email: userCredential.user.email,
       displayName: displayName,
+      emailVerified: false,
       schedule: {
         Monday: [], 
         Tuesday: [], 
@@ -71,13 +78,13 @@ export async function signUp(email, password, displayName = '') {
     return userCredential;
   } catch (error) {
     console.error("Error signing up:", error);
-    // If MongoDB creation fails, attempt to delete the Firebase user
+    // Clean up if MongoDB creation fails
     try {
       if (auth.currentUser) {
         await auth.currentUser.delete();
       }
     } catch (deleteError) {
-      console.error("Error cleaning up Firebase user after failed signup:", deleteError);
+      console.error("Error cleaning up Firebase user:", deleteError);
     }
     throw error;
   }
@@ -86,13 +93,18 @@ export async function signUp(email, password, displayName = '') {
 export async function signIn(email, password) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    
+    // Check if email is verified
+    if (!userCredential.user.emailVerified) {
+      throw { code: 'auth/unverified-email' };
+    }
+    
     return userCredential;
   } catch (error) {
     console.error("Error signing in:", error);
     throw error;
   }
 }
-
 export async function signOut() {
   try {
     await _signOut(auth);
