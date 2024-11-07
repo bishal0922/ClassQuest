@@ -13,12 +13,13 @@
  * The "use client" directive at the top indicates that this component should be rendered on the client side.
  */
 "use client"
+"use client"
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, Home, Calendar, Search, BarChart2, LogOut, Users, Compass, AlertTriangle, Map } from 'lucide-react';
 import { useAuthContext } from './AuthProvider';
 import { Toaster, toast } from 'react-hot-toast';
+import { auth } from '../lib/firebase/firebase-config';
 const Layout = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -35,6 +36,14 @@ const Layout = ({ children }) => {
         { href: '/directions', label: 'Directions', icon: Compass },
         { href: '/map', label: 'Map', icon: Map, requiresAuth: true }, // Added requiresAuth flag
     ];
+
+     // Don't show sidebar on auth pages or when email isn't verified
+  const shouldShowSidebar = () => {
+    const authPages = ['/login', '/signup', '/verify-email'];
+    if (authPages.includes(pathname)) return false;
+    if (auth.currentUser && !auth.currentUser.emailVerified) return false;
+    return user || isGuestMode;
+  };
 
     const handleNavigation = (href, requiresAuth) => {
         if (requiresAuth && isGuestMode) {
@@ -111,7 +120,7 @@ const Layout = ({ children }) => {
             <Toaster />
 
             {/* Backdrop for mobile */}
-            {sidebarOpen && (
+            {shouldShowSidebar() && (
                 <div 
                     className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" 
                     onClick={() => setSidebarOpen(false)}
@@ -169,7 +178,7 @@ const Layout = ({ children }) => {
             )}
 
             {/* Main content area */}
-            <div className={`flex-1 flex flex-col ${showSidebar ? 'md:ml-72' : ''} relative`}>
+            <div className={`flex-1 flex flex-col ${shouldShowSidebar()? 'md:ml-72' : ''} relative`}>
                 {showSidebar && (
                     <header className="bg-white shadow-sm md:hidden relative z-40">
                         <div className="px-4 py-4 flex justify-between items-center">

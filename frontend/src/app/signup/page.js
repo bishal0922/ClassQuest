@@ -1,16 +1,14 @@
 // src/app/signup/page.js
-
 "use client";
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signUp } from '../lib/firebase/auth';
-import { updateProfile, sendEmailVerification } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from 'firebase/auth'; // Added updateProfile import
 import { auth } from '../lib/firebase/firebase-config';
-import { createUser } from '../lib/userModel';
 import { Eye, EyeOff } from 'lucide-react';
 import { isValidUTAEmail, formatAuthError } from '../lib/authService';
+import { createUser } from '../lib/userModel';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -45,79 +43,95 @@ const Signup = () => {
     return true;
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
 
-  if (!validateForm()) return;
+    if (!validateForm()) return;
 
-  setIsLoading(true);
+    setIsLoading(true);
+    console.log('Starting signup process...');
 
-  try {
-    // Check email availability first
-    const checkEmailResponse = await fetch('/api/auth/check-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email: formData.email }),
-    });
-
-    const checkEmailData = await checkEmailResponse.json();
-
-    if (!checkEmailResponse.ok) {
-      throw new Error(checkEmailData.message || 'Failed to create account');
-    }
-
-    // Proceed with signup if email check passes
-    const userCredential = await signUp(formData.email, formData.password);
-    const user = userCredential.user;
-
-    // Update profile with display name
-    await updateProfile(user, { 
-      displayName: formData.username 
-    });
-
-    // Create user in MongoDB
-    await createUser({
-      firebaseId: user.uid,
-      email: formData.email,
-      displayName: formData.username,
-      emailVerified: false,
-      schedule: {
-        Monday: [],
-        Tuesday: [],
-        Wednesday: [],
-        Thursday: [],
-        Friday: []
-      }
-    });
-
-    // Send verification email
-    await sendEmailVerification(user, {
-      url: `${window.location.origin}/login`,
-    });
-
-    // Redirect to verification page
-    router.push('/verify-email');
-    
-  } catch (error) {
-    console.error("Error during sign up:", error);
-    
-    // Clean up if anything fails
     try {
-      if (auth.currentUser) {
-        await auth.currentUser.delete();
-      }
-    } catch (deleteError) {
-      console.error("Error cleaning up after failed signup:", deleteError);
-    }
+      // Check email availability
+      console.log('Checking email availability...');
+      const checkEmailResponse = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: formData.email }),
+      });
 
-    setError(error.message || formatAuthError(error));
-  } finally {
-    setIsLoading(false);
-  }
-};
+      const checkEmailData = await checkEmailResponse.json();
+
+      if (!checkEmailResponse.ok) {
+        throw new Error(checkEmailData.message || 'Failed to create account');
+      }
+
+      console.log('Email check passed, creating user...');
+
+      // Create Firebase user
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+      console.log('Firebase user created:', user.uid);
+
+      // Update profile with display name
+      await updateProfile(user, {
+        displayName: formData.username
+      });
+      console.log('Profile updated with display name');
+
+      // Send verification email
+      const actionCodeSettings = {
+        url: `${window.location.origin}/verify-email?mode=verifyEmail`,
+        handleCodeInApp: true,
+      };
+
+      console.log('Sending verification email...');
+      await sendEmailVerification(user, actionCodeSettings);
+      console.log('Verification email sent successfully');
+
+      // Create user in MongoDB
+      console.log('Creating user in database...');
+      await createUser({
+        firebaseId: user.uid,
+        email: formData.email,
+        displayName: formData.username,
+        emailVerified: false,
+        schedule: {
+          Monday: [],
+          Tuesday: [],
+          Wednesday: [],
+          Thursday: [],
+          Friday: []
+        }
+      });
+      console.log('User created successfully in database');
+
+      // Store verification data
+      localStorage.setItem('verificationSentAt', Date.now().toString());
+      localStorage.setItem('pendingVerificationEmail', formData.email);
+
+      // Redirect to verification page
+      router.push('/verify-email');
+    } catch (error) {
+      console.error('Error during sign up:', error);
+      
+      // Clean up if anything fails
+      try {
+        if (auth.currentUser) {
+          await auth.currentUser.delete();
+        }
+      } catch (deleteError) {
+        console.error('Error cleaning up after failed signup:', deleteError);
+      }
+
+      setError(formatAuthError(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="flex justify-center items-center min-h-screen bg-indigo-50">
       <div className="w-full max-w-md mx-4 bg-white p-8 rounded-lg shadow-md">
