@@ -31,9 +31,9 @@ const Layout = ({ children }) => {
         { href: '/', label: 'Home', icon: Home },
         { href: '/schedule', label: 'My Schedule', icon: Calendar },
         { href: '/network', label: 'Friends', icon: Users},
-        { href: '/compare', label: 'Compare', icon: BarChart2 },
+        // { href: '/compare', label: 'Compare', icon: BarChart2 },
         { href: '/directions', label: 'Directions', icon: Compass },
-        { href: '/map', label: 'Map', icon: Map, requiresAuth: true }, // Added requiresAuth flag
+        // { href: '/map', label: 'Map', icon: Map, requiresAuth: true }, // Added requiresAuth flag
     ];
 
     const handleNavigation = (href, requiresAuth) => {
