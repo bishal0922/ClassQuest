@@ -66,8 +66,7 @@ const Login = () => {
       const userData = await getUserByFirebaseId(userCredential.user.uid);
       
       if (userData) {
-        // User exists in MongoDB, proceed with login
-        router.push('/schedule');
+        router.push('/');
       } else {
         // User doesn't exist in MongoDB, show error
         setError('User not found. Please sign up first.');
