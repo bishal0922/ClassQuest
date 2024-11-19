@@ -4,6 +4,7 @@ import { analyzeEventType } from './utility/calendarImportService';
 import { useAuthContext } from './AuthProvider';
 import RestrictedFeatureModal from './RestrictedFeatureModal';
 import GoogleCalendarButton from './calendar/GoogleCalendarButton';
+import OutlookCalendarButton from './calendar/OutlookCalendarButton';
 import EventCard from './calendar/EventCard';
 import ImportOptions from './calendar/ImportOptions';
 import { processRecurringEvent, compareWithExisting } from '../utils/calendarProcessing';
@@ -56,6 +57,10 @@ const CalendarSync = ({ onEventsImported, onClose, existingEvents }) => {
     } catch (error) {
       handleSyncError("Initial error:", error);
     }
+  };
+
+  const handleOutlookAuth = () => {
+    alert("Outlook calendar is currently experiencing issues. Please check back later or contact Team 3.");
   };
 
   const handleTokenResponse = async (tokenResponse) => {
@@ -274,6 +279,7 @@ const mapEventToScheduleFormat = (event) => {
                 This feature is currently in testing.<br />
                 Please verify your access status below.
               </p>
+              <OutlookCalendarButton onAuth={handleOutlookAuth} /> 
               <GoogleCalendarButton onAuth={handleGoogleAuth} />
             </div>
           </div>
