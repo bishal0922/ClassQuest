@@ -25,6 +25,7 @@ const UserSchema = {
   },
   connections: [String], // Array of firebaseIds of connected users
   pendingConnections: [String], // Array of firebaseIds of pending connection requests
+  emailVerified: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 };

@@ -32,14 +32,19 @@ async function fetchFromAPI(action, data) {
 export async function createUser(userData) {
   try {
     const result = await fetchFromAPI('createUser', {
-      ...userData,
+      firebaseId: userData.firebaseId,
+      email: userData.email,
+      displayName: userData.displayName || '',
+      emailVerified: false, // Explicitly set emailVerified field
       schedule: {
         Monday: [],
         Tuesday: [],
         Wednesday: [],
         Thursday: [],
         Friday: []
-      }
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
     
     if (!result.success) {
@@ -57,7 +62,8 @@ export async function updateUser(firebaseId, updateData) {
   try {
     const result = await fetchFromAPI('updateUser', {
       firebaseId,
-      ...updateData
+      ...updateData,
+      updatedAt: new Date()
     });
     
     if (!result.success) {
@@ -67,6 +73,41 @@ export async function updateUser(firebaseId, updateData) {
     return result.user;
   } catch (error) {
     console.error('Error updating user:', error);
+    throw error;
+  }
+}
+
+// Add a specific function to update email verification status
+export async function updateEmailVerificationStatus(firebaseId, isVerified) {
+  console.log(`Starting email verification update for ${firebaseId} to ${isVerified}`);
+  
+  try {
+    const response = await fetch('/api/user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'updateUser',
+        data: {
+          firebaseId,
+          emailVerified: isVerified,
+          updatedAt: new Date()
+        }
+      })
+    });
+
+    console.log('API Response status:', response.status);
+    const result = await response.json();
+    console.log('API Response data:', result);
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to update verification status');
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error in updateEmailVerificationStatus:', error);
     throw error;
   }
 }
@@ -82,7 +123,11 @@ export async function getUserByFirebaseId(firebaseId) {
 }
 
 export async function updateUserSchedule(firebaseId, schedule) {
-  return fetchFromAPI('updateUserSchedule', { firebaseId, schedule });
+  return fetchFromAPI('updateUserSchedule', { 
+    firebaseId, 
+    schedule,
+    updatedAt: new Date()
+  });
 }
 
 export async function getUserSchedule(firebaseId) {
