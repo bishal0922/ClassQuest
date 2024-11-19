@@ -15,6 +15,14 @@ const MapComponent = dynamic(() => import('../components/MapComponent'), {
   )
 });
 
+const DevelopmentBanner = () => (
+  <div className="bg-yellow-200 text-center py-2">
+    <p className="text-lg font-medium text-yellow-800">
+      Currently in development with mock users and UI templates
+    </p>
+  </div>
+);
+
 const RestrictedMapAccess = () => {
   return (
     <div className="h-[500px] w-full flex items-center justify-center bg-gray-50 rounded-lg">
@@ -62,6 +70,7 @@ const MapPage = () => {
 
   return (
     <>
+      <DevelopmentBanner />
       <MapComponent />
     </>
   );
