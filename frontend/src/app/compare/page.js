@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuthContext } from '../components/AuthProvider';
-import { Users, ChevronRight, Calendar, Search, Clock, AlertTriangle, Users2, Sun, Moon, Cloud } from 'lucide-react';
+import { Users, ChevronRight, Calendar, Search, Clock, AlertTriangle, Users2, MapPin, Sun, Moon, Cloud } from 'lucide-react';
 import RestrictedFeatureModal from '../components/RestrictedFeatureModal';
 
 // Utility Components
@@ -65,24 +65,26 @@ const TimeOverview = ({ schedule, colorScheme }) => {
 };
 
 const DayColumn = ({ day, schedule, colorScheme }) => {
+  const [clickedEvent, setClickedEvent] = useState(null);
+
   const getEventHeight = (startTime, endTime) => {
-    const getMinutes = (timeStr) => {
+    const timeToMinutes = (timeStr) => {
       const [time, period] = timeStr.split(' ');
-      const [hours, minutes] = time.split(':').map(Number);
+      let [hours, minutes] = time.split(':').map(Number);
       let totalMinutes = hours * 60 + minutes;
       if (period === 'PM' && hours !== 12) totalMinutes += 12 * 60;
       if (period === 'AM' && hours === 12) totalMinutes = minutes;
       return totalMinutes;
     };
 
-    const startMinutes = getMinutes(startTime);
-    const endMinutes = getMinutes(endTime);
+    const startMinutes = timeToMinutes(startTime);
+    const endMinutes = timeToMinutes(endTime);
     return ((endMinutes - startMinutes) / (14 * 60)) * 100;
   };
 
   const getEventPosition = (startTime) => {
-    const [time, period] = startTime.split(' ');
-    const [hours, minutes] = time.split(':').map(Number);
+    const [timeValue, period] = startTime.split(' ');
+    const [hours, minutes] = timeValue.split(':').map(Number);
     let totalMinutes = hours * 60 + minutes;
     if (period === 'PM' && hours !== 12) totalMinutes += 12 * 60;
     if (period === 'AM' && hours === 12) totalMinutes = minutes;
@@ -93,34 +95,6 @@ const DayColumn = ({ day, schedule, colorScheme }) => {
     return ((totalMinutes - startOfDay) / dayLength) * 100;
   };
 
-  const renderEventContent = (event, height) => {
-    if (height < 15) {
-      return (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-1.5 h-1.5 rounded-full bg-white/90"></div>
-        </div>
-      );
-    }
-
-    return (
-      <>
-        <div className="text-xs font-medium text-white truncate">
-          {event.className}
-        </div>
-        {height >= 25 && (
-          <>
-            <div className="text-xs text-white/90 truncate">
-              {event.location}
-            </div>
-            <div className="text-xs text-white/90 truncate">
-              {event.startTime} - {event.endTime}
-            </div>
-          </>
-        )}
-      </>
-    );
-  };
-
   return (
     <div className="flex-1">
       <div className="text-sm font-medium text-gray-900 mb-2">{day}</div>
@@ -128,6 +102,7 @@ const DayColumn = ({ day, schedule, colorScheme }) => {
         {schedule?.map((event, index) => {
           const height = getEventHeight(event.startTime, event.endTime);
           const top = getEventPosition(event.startTime);
+          const isSmallEvent = height < 15;
 
           return (
             <div
@@ -138,29 +113,41 @@ const DayColumn = ({ day, schedule, colorScheme }) => {
                 left: '4px',
                 right: '4px',
                 height: `${Math.max(4, Math.min(100 - top, height))}%`,
-                zIndex: 10
+                zIndex: clickedEvent === index ? 30 : 10
               }}
-              className="group relative"
             >
-              {/* Main block */}
               <div
-                className={`${colorScheme} rounded-md p-2 h-full transform transition-all duration-200 
-                  hover:scale-[1.02] hover:z-20 cursor-pointer 
-                  ${height < 15 ? 'hover:ring-2 hover:ring-white/50' : ''}`}
+                onClick={() => setClickedEvent(clickedEvent === index ? null : index)}
+                className={`${colorScheme} rounded-md p-2 h-full cursor-pointer relative`}
               >
-                {renderEventContent(event, height)}
-              </div>
+                {isSmallEvent ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/90" />
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-xs font-medium text-white truncate">
+                      {event.className}
+                    </div>
+                    {height >= 25 && (
+                      <>
+                        <div className="text-xs text-white/90 truncate">
+                          {event.location}
+                        </div>
+                        <div className="text-xs text-white/90 truncate">
+                          {event.startTime} - {event.endTime}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
 
-              {/* Fixed Tooltip */}
-              <div 
-                className="opacity-0 group-hover:opacity-100 transition-opacity absolute left-full top-0 ml-2 z-50 pointer-events-none"
-                style={{ minWidth: '200px' }}
-              >
-                <div className="bg-gray-900/95 backdrop-blur-sm text-white px-3 py-2 rounded-lg shadow-lg">
-                  <div className="font-medium mb-1">{event.className}</div>
-                  <div className="text-sm text-gray-200">{event.location}</div>
-                  <div className="text-sm text-gray-200">{event.startTime} - {event.endTime}</div>
-                </div>
+                {/* Simple popup when clicked */}
+                {clickedEvent === index && (
+                  <div className="absolute left-0 right-0 -bottom-12 bg-gray-900 text-white p-2 rounded shadow-lg z-40 text-xs">
+                    {event.className}
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -169,6 +156,7 @@ const DayColumn = ({ day, schedule, colorScheme }) => {
     </div>
   );
 };
+
 
 // Schedule Comparison View
 const CompareSchedulesView = ({ mySchedule, friendSchedule, friendName, onBack }) => {
